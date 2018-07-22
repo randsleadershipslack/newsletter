@@ -251,15 +251,16 @@ if __name__ == '__main__':
     parser.store_args()
 
     (start, end) = parser.get_dates()
-    print("Messages from", parser.timespan)
+    print("Looking for messages from {0}".format(parser.timespan))
 
     users = {}
     channels = get_channels(whitelist=parser.parsed_args.channel)
-    print("Found", len(channels), "channels")
+    print("Found {0} channels".format(len(channels)))
     if not channels:
         sys.exit()
 
     writer = Writer()
+    total_messages = 0
     for channel in channels:
         channel.fetch_messages(start, end, parser.parsed_args.reactions, users)
 
@@ -273,4 +274,8 @@ if __name__ == '__main__':
         channel.annotate_messages(users)
 
         writer.write_channel(channel)
-        print("Found", len(channel.messages), "potential messages in", channel.name)
+        total_messages += len(channel.messages)
+        print("\t{1}: {0} potential messages".format(len(channel.messages), channel.name))
+
+    if len(channels) > 1:
+        print("\nFound {0} potential messages overall".format(total_messages))
