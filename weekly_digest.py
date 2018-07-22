@@ -33,6 +33,10 @@ class CommandLine(argparse.ArgumentParser):
         super().__init__(description='Create a digest of reacted-to posts from a given week.')
         self.timespan = ""
         self.parsed_args = None
+        self.start_date = datetime.date.today()
+        self.end_date = datetime.date.today()
+        self.start_timestamp = datetime.datetime.now()
+        self.end_timestamp = datetime.datetime.now()
 
         self.add_argument("--week", type=int, default=1, const=1, nargs='?',
                           help="Fetch messages from n weeks ago (default: %(default)s)")
@@ -47,6 +51,7 @@ class CommandLine(argparse.ArgumentParser):
 
     def store_args(self):
         self.parsed_args = self.parse_args()
+        self.extract_dates()
 
     @staticmethod
     def find_week(week):
@@ -58,26 +63,27 @@ class CommandLine(argparse.ArgumentParser):
         end_date = start_date + datetime.timedelta(7)
         return start_date, end_date
 
-    def get_dates(self):
+    def extract_dates(self):
         # Work in dates to force the beginning of the day
-        starting = datetime.date.today()
-        ending = datetime.date.today()
         if self.parsed_args.week:
-            starting, ending = self.find_week(self.parsed_args.week)
+            self.start_date, self.end_date = self.find_week(self.parsed_args.week)
 
         if self.parsed_args.start:
-            starting = self.parsed_args.start
+            self.start_date = self.parsed_args.start
 
         if self.parsed_args.end:
-            ending = self.parsed_args.end
+            self.end_date = self.parsed_args.end
 
-        if starting > ending:
+        if self.start_date > self.end_date:
             raise ValueError
 
-        self.timespan = "{0} to {1}".format(starting.isoformat(), ending.isoformat())
+        self.timespan = "{0} to {1}".format(self.start_date.isoformat(), self.end_date.isoformat())
+
+        self.start_timestamp = datetime.datetime.combine(self.start_date, datetime.time())
+        self.end_timestamp = datetime.datetime.combine(self.end_date, datetime.time())
 
         # Return datetimes to allow easy timestamp conversion
-        return datetime.datetime.combine(starting, datetime.time()), datetime.datetime.combine(ending, datetime.time())
+        return self.start_timestamp, self.end_timestamp
 
 
 class Message:
@@ -250,7 +256,6 @@ if __name__ == '__main__':
     parser = CommandLine()
     parser.store_args()
 
-    (start, end) = parser.get_dates()
     print("Looking for messages from {0}".format(parser.timespan))
 
     users = {}
@@ -262,7 +267,7 @@ if __name__ == '__main__':
     writer = Writer()
     total_messages = 0
     for channel in channels:
-        channel.fetch_messages(start, end, parser.parsed_args.reactions, users)
+        channel.fetch_messages(parser.start_timestamp, parser.end_timestamp, parser.parsed_args.reactions, users)
 
         for (user_id, user) in users.items():
             user.fetch_name()
