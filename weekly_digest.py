@@ -31,7 +31,6 @@ class CommandLine(argparse.ArgumentParser):
 
     def __init__(self):
         super().__init__(description='Create a digest of reacted-to posts from a given week.')
-        self.timespan = ""
         self.parsed_args = None
         self.start_date = datetime.date.today()
         self.end_date = datetime.date.today()
@@ -76,8 +75,6 @@ class CommandLine(argparse.ArgumentParser):
 
         if self.start_date > self.end_date:
             raise ValueError
-
-        self.timespan = "{0} to {1}".format(self.start_date.isoformat(), self.end_date.isoformat())
 
         self.start_timestamp = datetime.datetime.combine(self.start_date, datetime.time())
         self.end_timestamp = datetime.datetime.combine(self.end_date, datetime.time())
@@ -256,7 +253,7 @@ if __name__ == '__main__':
     parser = CommandLine()
     parser.store_args()
 
-    print("Looking for messages from {0}".format(parser.timespan))
+    print("Looking for messages from {0} to {1}".format(parser.start_date.isoformat(), parser.end_date.isoformat()))
 
     users = {}
     channels = get_channels(whitelist=parser.parsed_args.channel)
