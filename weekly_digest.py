@@ -260,6 +260,7 @@ if __name__ == '__main__':
 
     writer = Writer()
     total_messages = 0
+    total_channels = 0
     for channel in channels:
         channel.fetch_messages(parser.start_timestamp, parser.end_timestamp, parser.parsed_args.reactions, users)
 
@@ -274,7 +275,8 @@ if __name__ == '__main__':
 
         writer.write_channel(channel)
         total_messages += len(channel.messages)
+        total_channels += 1
         print("\t{1}: {0} potential messages".format(len(channel.messages), channel.name))
 
     if len(channels) > 1:
-        print("\nFound {0} potential messages overall".format(total_messages))
+        print("\nFound {0} potential messages across {1} channels".format(total_messages, total_channels))
