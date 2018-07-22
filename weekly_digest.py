@@ -241,7 +241,7 @@ class Writer:
     def write_channel(self, channel):
         with open(self.filename(channel), 'w') as f:
             f.write(self.formatted_header(channel))
-            for message in channels[0].messages:
+            for message in channel.messages:
                 f.write(self.formatted_message(message))
                 f.write("\n")
 
