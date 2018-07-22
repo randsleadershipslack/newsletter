@@ -7,7 +7,13 @@ import os
 import sys
 import textwrap
 
-slack = SlackClient(os.environ['SLACK_API_TOKEN'])
+token = "garbage"
+try:
+    token = os.environ['API_TOKEN']
+except:
+    pass
+
+slack = SlackClient(token)
 
 
 def valid_date(s):
@@ -24,9 +30,9 @@ class CommandLine(argparse.ArgumentParser):
     """
 
     def __init__(self):
-        super().__init__(self, description='Create a digest of reacted-to posts from a given week.')
+        super().__init__(description='Create a digest of reacted-to posts from a given week.')
         self.timespan = ""
-        self.args = None
+        self.parsed_args = None
 
         self.add_argument("--week", type=int, default=1, const=1, nargs='?',
                           help="Fetch messages from n weeks ago (default: %(default)s)")
@@ -39,9 +45,8 @@ class CommandLine(argparse.ArgumentParser):
         self.add_argument("--reactions", type=int, default=1,
                           help="The number of reactions necessary for retaining in digest (default: %(default)s)")
 
-    def parse_args(self, args=None, namespace=None):
-        self.args = super().parse_args(args, namespace)
-        return self.args
+    def store_args(self):
+        self.parsed_args = self.parse_args()
 
     @staticmethod
     def find_week(week):
@@ -57,14 +62,14 @@ class CommandLine(argparse.ArgumentParser):
         # Work in dates to force the beginning of the day
         starting = datetime.date.today()
         ending = datetime.date.today()
-        if self.args.week:
-            starting, ending = self.find_week(self.args.week)
+        if self.parsed_args.week:
+            starting, ending = self.find_week(self.parsed_args.week)
 
-        if self.args.start:
-            starting = self.args.start
+        if self.parsed_args.start:
+            starting = self.parsed_args.start
 
-        if self.args.end:
-            ending = self.args.end
+        if self.parsed_args.end:
+            ending = self.parsed_args.end
 
         if starting > ending:
             raise ValueError
@@ -128,6 +133,9 @@ class Channel:
             if response['ok']:
                 more = response['has_more']
                 message_list = response['messages']
+                if not message_list:
+                    # There were none that matched our date range
+                    return
                 end_at = message_list[-1]["ts"]
                 for message in message_list:
                     if self.has_enough_reactions(message, required_reactions):
@@ -240,20 +248,20 @@ class Writer:
 
 if __name__ == '__main__':
     parser = CommandLine()
-    parser.parse_args()
+    parser.store_args()
 
     (start, end) = parser.get_dates()
     print("Messages from", parser.timespan)
 
     users = {}
-    channels = get_channels(whitelist=parser.args.channel)
+    channels = get_channels(whitelist=parser.parsed_args.channel)
     print("Found", len(channels), "channels")
     if not channels:
         sys.exit()
 
     writer = Writer()
     for channel in channels:
-        channel.fetch_messages(start, end, parser.args.reactions, users)
+        channel.fetch_messages(start, end, parser.parsed_args.reactions, users)
 
         for (user_id, user) in users.items():
             user.fetch_name()
