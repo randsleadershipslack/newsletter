@@ -136,14 +136,11 @@ class Channel:
             if response['ok']:
                 more = response['has_more']
                 message_list = response['messages']
-                if not message_list:
-                    # There were none that matched our date range
-                    return
-                end_at = message_list[-1]["ts"]
                 for message in message_list:
                     if self.has_enough_reactions(message, required_reactions):
                         self.remember_message(message)
                         self.remember_user(message, users)
+                    end_at = message["ts"]
             else:
                 print(response['headers'])
                 raise RuntimeError
