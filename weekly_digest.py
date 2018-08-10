@@ -36,6 +36,7 @@ class Options(argparse.ArgumentParser):
         self.end_date = datetime.date.today()
         self.start_timestamp = datetime.datetime.now()
         self.end_timestamp = datetime.datetime.now()
+        self.whitelist = None
 
         self.add_argument("--week", type=int, default=1, const=1, nargs='?',
                           help="Fetch messages from n weeks ago (default: %(default)s)")
@@ -51,6 +52,7 @@ class Options(argparse.ArgumentParser):
     def store_args(self):
         self.parsed_args = self.parse_args()
         self.extract_dates()
+        self.whitelist=options.parsed_args.channel
 
     @staticmethod
     def find_week(week):
@@ -81,6 +83,13 @@ class Options(argparse.ArgumentParser):
 
         # Return datetimes to allow easy timestamp conversion
         return self.start_timestamp, self.end_timestamp
+
+    def filter_channel(self, name):
+        if self.whitelist and name in self.whitelist:
+            return False
+        elif not (self.whitelist or 'zmeta' in name):
+            return False
+        return True
 
 
 class Message:
@@ -188,16 +197,14 @@ class User:
                 self.display_name = response['user']['profile']['display_name']
 
 
-def get_channels(whitelist=None):
+def get_channels(options):
     response = slack.api_call("channels.list", exclude_archived=1, exclude_members=1)
     channels = []
     if response["ok"]:
         for channel in response["channels"]:
             name = channel['name']
             channel_id = channel['id']
-            if whitelist and name in whitelist:
-                channels.append(Channel(channel_id=channel_id, name=name))
-            elif not (whitelist or 'zmeta' in name):
+            if not options.filter_channel(name):
                 channels.append(Channel(channel_id=channel_id, name=name))
     return channels
 
@@ -253,7 +260,7 @@ if __name__ == '__main__':
     print("Looking for messages from {0} to {1}".format(options.start_date.isoformat(), options.end_date.isoformat()))
 
     users = {}
-    channels = get_channels(whitelist=options.parsed_args.channel)
+    channels = get_channels(options)
     print("Found {0} channels".format(len(channels)))
     if not channels:
         sys.exit()
