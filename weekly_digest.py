@@ -44,7 +44,7 @@ class Options(argparse.ArgumentParser):
                           help="Fetch messages from the given date (format YYYY-MM-DD).  Overrides week start.")
         self.add_argument("--end", type=valid_date,
                           help="Fetch messages up to the given date (format YYYY-MM-DD)  Overrides week end.")
-        self.add_argument("--channel", nargs='+',
+        self.add_argument("--channel", "--channels", nargs='+',
                           help="Only examine the given channel(s)")
         self.add_argument("--reactions", type=int, default=1,
                           help="The number of reactions necessary for retaining in digest (default: %(default)s)")
