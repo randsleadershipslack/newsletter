@@ -37,8 +37,8 @@ class Options(argparse.ArgumentParser):
         self.end_date = datetime.date.today()
         self.start_timestamp = datetime.datetime.now()
         self.end_timestamp = datetime.datetime.now()
-        self.whitelist = []
-        self.blacklist = []
+        self._whitelist = []
+        self._blacklist = []
 
         self.add_argument("--week", type=int, default=1, metavar="N",
                           help="Fetch messages from N weeks ago (default: %(default)s)")
@@ -59,11 +59,11 @@ class Options(argparse.ArgumentParser):
 
     def store_args(self):
         self.parsed_args = self.parse_args()
-        self.extract_dates()
-        self.compile_lists()
+        self._extract_dates()
+        self._compile_lists()
 
     @staticmethod
-    def find_week(week):
+    def _find_week(week):
         ago = datetime.date.today() - datetime.timedelta(week * 7)
         if ago.weekday() == 6:
             start_date = ago
@@ -72,10 +72,10 @@ class Options(argparse.ArgumentParser):
         end_date = start_date + datetime.timedelta(7)
         return start_date, end_date
 
-    def extract_dates(self):
+    def _extract_dates(self):
         # Work in dates to force the beginning of the day
         if self.parsed_args.week:
-            self.start_date, self.end_date = self.find_week(self.parsed_args.week)
+            self.start_date, self.end_date = Options._find_week(self.parsed_args.week)
 
         if self.parsed_args.start:
             self.start_date = self.parsed_args.start
@@ -92,42 +92,42 @@ class Options(argparse.ArgumentParser):
         # Return datetimes to allow easy timestamp conversion
         return self.start_timestamp, self.end_timestamp
 
-    def compile_lists(self):
-        self.add_command_line_channels()
-        self.add_channels_from_file()
-        self.add_command_line_exclusions()
-        self.exclude_channels_from_file()
+    def _compile_lists(self):
+        self._add_command_line_channels()
+        self._add_channels_from_file()
+        self._add_command_line_exclusions()
+        self._exclude_channels_from_file()
 
-    def add_command_line_channels(self):
+    def _add_command_line_channels(self):
         if self.parsed_args.channel:
             for channel in self.parsed_args.channel:
-                self.whitelist.append(re.compile(channel))
+                self._whitelist.append(re.compile(channel))
 
-    def add_command_line_exclusions(self):
+    def _add_command_line_exclusions(self):
         if self.parsed_args.exclude:
             for channel in self.parsed_args.exclude:
-                self.blacklist.append(re.compile(channel))
+                self._blacklist.append(re.compile(channel))
 
-    def add_channels_from_file(self):
+    def _add_channels_from_file(self):
         if self.parsed_args.channel_list:
             with open(self.parsed_args.channel_list, 'r') as f:
                 for line in f:
                     for channel in line.split():
-                        self.whitelist.append(re.compile(channel))
+                        self._whitelist.append(re.compile(channel))
 
-    def exclude_channels_from_file(self):
+    def _exclude_channels_from_file(self):
         if self.parsed_args.exclude_list:
             with open(self.parsed_args.exclude_list, 'r') as f:
                 for line in f:
                     for channel in line.split():
-                        self.blacklist.append(re.compile(channel))
+                        self._blacklist.append(re.compile(channel))
 
     def filter_channel(self, name):
-        if any(expression.match(name) for expression in self.whitelist):
+        if any(expression.match(name) for expression in self._whitelist):
             return False
-        elif any(expression.match(name) for expression in self.blacklist):
+        elif any(expression.match(name) for expression in self._blacklist):
             return True
-        elif not (self.whitelist or 'zmeta' in name):
+        elif not (self._whitelist or 'zmeta' in name):
             return False
         return True
 
@@ -186,16 +186,16 @@ class Channel:
                 more = response['has_more']
                 message_list = response['messages']
                 for message in message_list:
-                    if self.has_enough_reactions(message, required_reactions):
-                        self.remember_message(message)
-                        self.remember_user(message, users)
+                    if Channel._has_enough_reactions(message, required_reactions):
+                        self._remember_message(message)
+                        Channel._remember_user(message, users)
                     end_at = message["ts"]
             else:
                 print(response['headers'])
                 raise RuntimeError
 
     @staticmethod
-    def has_enough_reactions(message, required_reactions):
+    def _has_enough_reactions(message, required_reactions):
         if 'reactions' not in message:
             return False
         reaction_count = 0
@@ -203,11 +203,11 @@ class Channel:
             reaction_count += int(reaction['count'])
         return reaction_count >= required_reactions
 
-    def remember_message(self, message):
+    def _remember_message(self, message):
         self.messages.append(Message(self.id, message['user'], message['text'], message['ts']))
 
     @staticmethod
-    def remember_user(message, users):
+    def _remember_user(message, users):
         user = users.get(message['user'], None)
         if not user:
             user = User(message['user'])
@@ -255,13 +255,13 @@ class Writer:
     """
 
     def __init__(self):
-        self.folder_name = self.create_folder()
+        self.folder_name = Writer._create_folder()
         self.wrapper = textwrap.TextWrapper(width=80, expand_tabs=False, replace_whitespace=False,
                                             drop_whitespace=False)
         pass
 
     @staticmethod
-    def create_folder():
+    def _create_folder():
         name = datetime.date.today().isoformat()
         try:
             if not os.path.exists(name):
@@ -271,25 +271,25 @@ class Writer:
             raise
         return name
 
-    def filename(self, channel):
+    def _filename(self, channel):
         return self.folder_name + "/" + channel.name + ".txt"
 
     @staticmethod
-    def formatted_header(channel):
+    def _formatted_header(channel):
         name = "==  {0}  ==".format(channel.name)
         box = "{0}".format("=" * len(name))
         return "{0}\n{1}\n{0}\n\n".format(box, name)
 
-    def formatted_message(self, message):
+    def _formatted_message(self, message):
         separator = "-" * 80
         return "{0}\n{1}\n@{2} wrote on {3}\n{0}\n{4}\n".format(
             separator, message.url, message.user_showname, message.time, self.wrapper.fill(message.text))
 
     def write_channel(self, channel):
-        with open(self.filename(channel), 'w') as f:
-            f.write(self.formatted_header(channel))
+        with open(self._filename(channel), 'w') as f:
+            f.write(Writer._formatted_header(channel))
             for message in channel.messages:
-                f.write(self.formatted_message(message))
+                f.write(self._formatted_message(message))
                 f.write("\n")
 
 
