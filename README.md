@@ -20,26 +20,27 @@ messages were found.
 
 ```bash
 > ./weekly_digest.py --help
-```
 
-> optional arguments:
->
->  -h, --help            show this help message and exit
->
->  --week [WEEK]         Fetch messages from n weeks ago (default: 1)
->
->  --start START         Fetch messages from the given date (format YYYY-MM-
->                        DD). Overrides week start.
->
->  --end END             Fetch messages up to the given date (format YYYY-MM-
->                        DD) Overrides week end.
->
->  --channel[s] CHANNEL [CHANNEL ...]
->                        Only examine the given channel(s)
->
->  --reactions REACTIONS
->                        The number of reactions necessary for retaining in
->                        digest (default: 3)
+  -h, --help            show this help message and exit
+
+  --week [WEEK]         Fetch messages from n weeks ago (default: 1)
+
+  --start START         Fetch messages from the given date (format YYYY-MM-
+                        DD). Overrides week start.
+
+  --end END             Fetch messages up to the given date (format YYYY-MM-
+                        DD) Overrides week end.
+
+  --channel[s] CHANNEL [CHANNEL ...]
+                        Only examine the given channel(s)
+
+  --reactions REACTIONS
+                        The number of reactions necessary for retaining in
+                        digest (default: 3)
+
+  --exclude EXCLUDE [EXCLUDE ...]
+                        Specifically exclude the given channel(s)
+```
 
 ### Setup/Install
 

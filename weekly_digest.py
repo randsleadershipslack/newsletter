@@ -37,6 +37,7 @@ class Options(argparse.ArgumentParser):
         self.start_timestamp = datetime.datetime.now()
         self.end_timestamp = datetime.datetime.now()
         self.whitelist = None
+        self.blacklist = None
 
         self.add_argument("--week", type=int, default=1, const=1, nargs='?',
                           help="Fetch messages from n weeks ago (default: %(default)s)")
@@ -48,11 +49,14 @@ class Options(argparse.ArgumentParser):
                           help="Only examine the given channel(s)")
         self.add_argument("--reactions", type=int, default=3,
                           help="The number of reactions necessary for retaining in digest (default: %(default)s)")
+        self.add_argument("--exclude", nargs='+',
+                          help="Specifically exclude the given channel(s)")
 
     def store_args(self):
         self.parsed_args = self.parse_args()
         self.extract_dates()
         self.whitelist=options.parsed_args.channel
+        self.blacklist=options.parsed_args.exclude
 
     @staticmethod
     def find_week(week):
@@ -87,6 +91,8 @@ class Options(argparse.ArgumentParser):
     def filter_channel(self, name):
         if self.whitelist and name in self.whitelist:
             return False
+        elif self.blacklist and name in self.blacklist:
+            return True
         elif not (self.whitelist or 'zmeta' in name):
             return False
         return True
