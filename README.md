@@ -34,12 +34,12 @@ messages were found.
 >  --end END             Fetch messages up to the given date (format YYYY-MM-
 >                        DD) Overrides week end.
 >
->  --channel CHANNEL [CHANNEL ...]
+>  --channel[s] CHANNEL [CHANNEL ...]
 >                        Only examine the given channel(s)
 >
 >  --reactions REACTIONS
 >                        The number of reactions necessary for retaining in
->                        digest (default: 1)
+>                        digest (default: 3)
 
 ### Setup/Install
 
