@@ -4,6 +4,7 @@ import argparse
 import datetime
 from slackclient import SlackClient
 import os
+import re
 import sys
 import textwrap
 
@@ -36,8 +37,8 @@ class Options(argparse.ArgumentParser):
         self.end_date = datetime.date.today()
         self.start_timestamp = datetime.datetime.now()
         self.end_timestamp = datetime.datetime.now()
-        self.whitelist = None
-        self.blacklist = None
+        self.whitelist = []
+        self.blacklist = []
 
         self.add_argument("--week", type=int, default=1, const=1, nargs='?',
                           help="Fetch messages from n weeks ago (default: %(default)s)")
@@ -46,17 +47,16 @@ class Options(argparse.ArgumentParser):
         self.add_argument("--end", type=valid_date,
                           help="Fetch messages up to the given date (format YYYY-MM-DD)  Overrides week end.")
         self.add_argument("--channel", "--channels", nargs='+',
-                          help="Only examine the given channel(s)")
+                          help="Only examine the given channel(s) (Regular expressions allowed)")
         self.add_argument("--reactions", type=int, default=3,
                           help="The number of reactions necessary for retaining in digest (default: %(default)s)")
         self.add_argument("--exclude", nargs='+',
-                          help="Specifically exclude the given channel(s)")
+                          help="Specifically exclude the given channel(s) (Regular expressions allowed)")
 
     def store_args(self):
         self.parsed_args = self.parse_args()
         self.extract_dates()
-        self.whitelist=options.parsed_args.channel
-        self.blacklist=options.parsed_args.exclude
+        self.compile_lists()
 
     @staticmethod
     def find_week(week):
@@ -88,10 +88,18 @@ class Options(argparse.ArgumentParser):
         # Return datetimes to allow easy timestamp conversion
         return self.start_timestamp, self.end_timestamp
 
+    def compile_lists(self):
+        if self.parsed_args.channel:
+            for channel in self.parsed_args.channel:
+                self.whitelist.append(re.compile(channel))
+        if self.parsed_args.exclude:
+            for channel in self.parsed_args.exclude:
+                self.blacklist.append(re.compile(channel))
+
     def filter_channel(self, name):
-        if self.whitelist and name in self.whitelist:
+        if any(expression.match(name) for expression in self.whitelist):
             return False
-        elif self.blacklist and name in self.blacklist:
+        elif any(expression.match(name) for expression in self.blacklist):
             return True
         elif not (self.whitelist or 'zmeta' in name):
             return False

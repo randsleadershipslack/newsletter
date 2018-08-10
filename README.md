@@ -32,14 +32,17 @@ messages were found.
                         DD) Overrides week end.
 
   --channel[s] CHANNEL [CHANNEL ...]
-                        Only examine the given channel(s)
+                        Only examine the given channel(s) (Regular expressions
+                        allowed)
 
   --reactions REACTIONS
                         The number of reactions necessary for retaining in
                         digest (default: 3)
 
   --exclude EXCLUDE [EXCLUDE ...]
-                        Specifically exclude the given channel(s)
+                        Specifically exclude the given channel(s) (Regular
+                        expressions allowed)
+
 ```
 
 ### Setup/Install
