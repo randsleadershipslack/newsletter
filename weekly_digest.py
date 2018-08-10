@@ -247,13 +247,13 @@ class Writer:
 
 
 if __name__ == '__main__':
-    parser = Options()
-    parser.store_args()
+    options = Options()
+    options.store_args()
 
-    print("Looking for messages from {0} to {1}".format(parser.start_date.isoformat(), parser.end_date.isoformat()))
+    print("Looking for messages from {0} to {1}".format(options.start_date.isoformat(), options.end_date.isoformat()))
 
     users = {}
-    channels = get_channels(whitelist=parser.parsed_args.channel)
+    channels = get_channels(whitelist=options.parsed_args.channel)
     print("Found {0} channels".format(len(channels)))
     if not channels:
         sys.exit()
@@ -262,7 +262,7 @@ if __name__ == '__main__':
     total_messages = 0
     total_channels = 0
     for channel in channels:
-        channel.fetch_messages(parser.start_timestamp, parser.end_timestamp, parser.parsed_args.reactions, users)
+        channel.fetch_messages(options.start_timestamp, options.end_timestamp, options.parsed_args.reactions, users)
 
         for (user_id, user) in users.items():
             user.fetch_name()
