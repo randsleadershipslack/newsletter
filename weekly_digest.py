@@ -24,7 +24,7 @@ def valid_date(s):
         raise argparse.ArgumentTypeError(msg)
 
 
-class CommandLine(argparse.ArgumentParser):
+class Options(argparse.ArgumentParser):
     """
     Consolidates our argument handling.
     """
@@ -247,7 +247,7 @@ class Writer:
 
 
 if __name__ == '__main__':
-    parser = CommandLine()
+    parser = Options()
     parser.store_args()
 
     print("Looking for messages from {0} to {1}".format(parser.start_date.isoformat(), parser.end_date.isoformat()))
