@@ -10,6 +10,10 @@ which you can get from https://api.slack.com/docs/oauth-test-tokens
 ```bash
 > env API_TOKEN=<YOUR_SECRET_API_TOKEN> ./weekly_digest.py
 ```
+or
+```bash
+> env API_TOKEN=<YOUR_SECRET_API_TOKEN> ./weekly_digest.py --exclude-list ./default_exclude.txt
+```
 
 This will search slack for channels and then for messages in each 
 channel that have reactions.  It will put these inside a subdirectory 
