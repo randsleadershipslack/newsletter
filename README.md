@@ -20,29 +20,28 @@ messages were found.
 
 ```bash
 > ./weekly_digest.py --help
+Create a digest of reacted-to posts from a given week.
 
+optional arguments:
   -h, --help            show this help message and exit
-
-  --week [WEEK]         Fetch messages from n weeks ago (default: 1)
-
-  --start START         Fetch messages from the given date (format YYYY-MM-
-                        DD). Overrides week start.
-
-  --end END             Fetch messages up to the given date (format YYYY-MM-
-                        DD) Overrides week end.
-
-  --channel[s] CHANNEL [CHANNEL ...]
-                        Only examine the given channel(s) (Regular expressions
+  --week N              Fetch messages from N weeks ago (default: 1)
+  --start YYYY-MM-DD    Fetch messages from the given date. Overrides week
+                        start.
+  --end YYYY-MM-DD      Fetch messages up to the given date. Overrides week
+                        end.
+  --channel CHANNEL [CHANNEL ...], --channels CHANNEL [CHANNEL ...]
+                        Only examine the given channel(s) (regular expressions
                         allowed)
-
-  --reactions REACTIONS
-                        The number of reactions necessary for retaining in
-                        digest (default: 3)
-
-  --exclude EXCLUDE [EXCLUDE ...]
-                        Specifically exclude the given channel(s) (Regular
+  --channel-list FILE   Only examine the channel(s) given in the file (regular
                         expressions allowed)
-
+  --reactions THRESHOLD
+                        The number of reactions necessary for retaining in the
+                        digest (default: 3)
+  --exclude CHANNEL [CHANNEL ...]
+                        Specifically exclude the given channel(s) (regular
+                        expressions allowed)
+  --exclude-list FILE   Specifically exclude the channel(s) given in the file
+                        (regular expressions allowed)
 ```
 
 ### Setup/Install

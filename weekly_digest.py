@@ -40,22 +40,22 @@ class Options(argparse.ArgumentParser):
         self.whitelist = []
         self.blacklist = []
 
-        self.add_argument("--week", type=int, default=1, const=1, nargs='?',
-                          help="Fetch messages from n weeks ago (default: %(default)s)")
-        self.add_argument("--start", type=valid_date,
-                          help="Fetch messages from the given date (format YYYY-MM-DD).  Overrides week start.")
-        self.add_argument("--end", type=valid_date,
-                          help="Fetch messages up to the given date (format YYYY-MM-DD)  Overrides week end.")
-        self.add_argument("--channel", "--channels", nargs='+',
-                          help="Only examine the given channel(s) (Regular expressions allowed)")
+        self.add_argument("--week", type=int, default=1, metavar="N",
+                          help="Fetch messages from N weeks ago (default: %(default)s)")
+        self.add_argument("--start", type=valid_date, metavar="YYYY-MM-DD",
+                          help="Fetch messages from the given date.  Overrides week start.")
+        self.add_argument("--end", type=valid_date, metavar="YYYY-MM-DD",
+                          help="Fetch messages up to the given date.  Overrides week end.")
+        self.add_argument("--channel", "--channels", nargs='+', metavar="CHANNEL",
+                          help="Only examine the given channel(s) (regular expressions allowed)")
         self.add_argument("--channel-list", metavar="FILE",
-                          help="Only examine the channel(s) given in the file (Regular expressions allowed)")
-        self.add_argument("--reactions", type=int, default=3,
-                          help="The number of reactions necessary for retaining in digest (default: %(default)s)")
-        self.add_argument("--exclude", nargs='+',
-                          help="Specifically exclude the given channel(s) (Regular expressions allowed)")
+                          help="Only examine the channel(s) given in the file (regular expressions allowed)")
+        self.add_argument("--reactions", type=int, default=3, metavar="THRESHOLD",
+                          help="The number of reactions necessary for retaining in the digest (default: %(default)s)")
+        self.add_argument("--exclude", nargs='+', metavar="CHANNEL",
+                          help="Specifically exclude the given channel(s) (regular expressions allowed)")
         self.add_argument("--exclude-list", metavar="FILE",
-                          help="Specifically exclude the channel(s) given in the file (Regular expressions allowed)")
+                          help="Specifically exclude the channel(s) given in the file (regular expressions allowed)")
 
     def store_args(self):
         self.parsed_args = self.parse_args()
