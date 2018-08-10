@@ -48,10 +48,14 @@ class Options(argparse.ArgumentParser):
                           help="Fetch messages up to the given date (format YYYY-MM-DD)  Overrides week end.")
         self.add_argument("--channel", "--channels", nargs='+',
                           help="Only examine the given channel(s) (Regular expressions allowed)")
+        self.add_argument("--channel-list", metavar="FILE",
+                          help="Only examine the channel(s) given in the file (Regular expressions allowed)")
         self.add_argument("--reactions", type=int, default=3,
                           help="The number of reactions necessary for retaining in digest (default: %(default)s)")
         self.add_argument("--exclude", nargs='+',
                           help="Specifically exclude the given channel(s) (Regular expressions allowed)")
+        self.add_argument("--exclude-list", metavar="FILE",
+                          help="Specifically exclude the channel(s) given in the file (Regular expressions allowed)")
 
     def store_args(self):
         self.parsed_args = self.parse_args()
@@ -89,12 +93,34 @@ class Options(argparse.ArgumentParser):
         return self.start_timestamp, self.end_timestamp
 
     def compile_lists(self):
+        self.add_command_line_channels()
+        self.add_channels_from_file()
+        self.add_command_line_exclusions()
+        self.exclude_channels_from_file()
+
+    def add_command_line_channels(self):
         if self.parsed_args.channel:
             for channel in self.parsed_args.channel:
                 self.whitelist.append(re.compile(channel))
+
+    def add_command_line_exclusions(self):
         if self.parsed_args.exclude:
             for channel in self.parsed_args.exclude:
                 self.blacklist.append(re.compile(channel))
+
+    def add_channels_from_file(self):
+        if self.parsed_args.channel_list:
+            with open(self.parsed_args.channel_list, 'r') as f:
+                for line in f:
+                    for channel in line.split():
+                        self.whitelist.append(re.compile(channel))
+
+    def exclude_channels_from_file(self):
+        if self.parsed_args.exclude_list:
+            with open(self.parsed_args.exclude_list, 'r') as f:
+                for line in f:
+                    for channel in line.split():
+                        self.blacklist.append(re.compile(channel))
 
     def filter_channel(self, name):
         if any(expression.match(name) for expression in self.whitelist):
