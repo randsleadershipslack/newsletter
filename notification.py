@@ -12,7 +12,33 @@ except:
 
 slack = SlackClient(token)
 
-default_message = """:robot_face:I am a bot. Beep-boop:robot_face:"""
+default_message = """:robot_face:I am a bot, posting on behalf of {0}. Beep-boop:robot_face:
+
+We’re presently preparing to publish a newsletter for this slack, and
+some of the content you authored or participated or were named in has
+been selected for potential inclusion.  While all the content is
+public in channel history, we’re attempting to make the collation
+process opt-in.
+
+The current draft is at {1}
+
+We would like you to agree to the inclusion of your content.  Ideally,
+you’d provide blanket inclusion approval, but if you’d like to have
+finer control, or even blanket exclusion, that’s perfectly acceptable
+as well.  *If you don’t specifically approve your mentions/content by
+{2}, we will exclude it*.
+
+{0} will be able to see your response to this message, which can
+be as short as “Ok” (just this newsletter), “Ok - always”, “No”, and
+“No - always” (or :thumbsup:/:thumbsdown:).
+
+If you have questions, please either reply here, or in #rands-newsletter if
+they’re more general.
+
+Thanks for being an active part of the community, and we look forward
+to hearing from you soon.
+
+:robot_face:Beep-boop. Bot out:robot_face:"""
 
 
 class Options(argparse.ArgumentParser):
@@ -87,8 +113,8 @@ class Message:
     Handle formatting the message to be sent and sending it as appropriate
     """
 
-    def __init__(self, message_file):
-        self._message = default_message
+    def __init__(self, message_file, from_user):
+        self._message = default_message.format("Caleb", "URL", "DATE")
         if message_file:
             with open(message_file, 'r') as f:
                 self._message = f.read()
@@ -102,9 +128,11 @@ class Message:
             print("")
 
         for user in users:
-            print("Notifying {}".format(user))
             if not dry:
+                print("Notifying {}".format(user))
                 slack.api_call("chat.postMessage", channel=user, text=default_message, as_user=from_user.username)
+            else:
+                print("Would have notified {}".format(user))
 
 
 if __name__ == '__main__':
@@ -116,5 +144,5 @@ if __name__ == '__main__':
     #TODO: temp
     options.usernames = ["@slackbot"]
 
-    message = Message(message_file=options.parsed_args.message)
+    message = Message(message_file=options.parsed_args.message, from_user=from_user)
     message.send(from_user, options.usernames, dry=options.parsed_args.dry)
