@@ -357,7 +357,7 @@ if __name__ == '__main__':
         writer.write_channel(channel)
         total_messages += len(channel.messages)
         total_channels += 1
-        print("\t{1}: {0} potential messages".format(len(channel.messages), channel.name))
+        print("\t{0}: {1} potential messages".format(channel.name, len(channel.messages)))
 
     if len(channels) > 1:
         print("\nFound {0} potential messages across {1} channels".format(total_messages, total_channels))
