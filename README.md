@@ -18,6 +18,18 @@ a text file for each channel for which messages were found.
 > env API_TOKEN=<YOUR_SECRET_API_TOKEN> ./weekly_digest.py --exclude-list ./default_exclude.txt
 ```
 
+## [Usernames](EXTRACT_USERNAMES_README.md)
+
+This will download a given post (via it's _publicly available_ url)
+and scan it for usernames mentioned in the post, printing a sorted
+list of those usernames.
+
+### Default Usage
+
+```bash
+> ./extract_usernames.py <URL> --exclude-list ./evergreen_permissions.txt
+```
+
 ## Setup/Install
 
 Install all required python packages:
