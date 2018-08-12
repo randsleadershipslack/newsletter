@@ -2,18 +2,8 @@
 
 import argparse
 from html.parser import HTMLParser
-import os
 import re
 import requests
-from slackclient import SlackClient
-
-token = "garbage"
-try:
-    token = os.environ['API_TOKEN']
-except:
-    pass
-
-slack = SlackClient(token)
 
 
 class Options(argparse.ArgumentParser):
