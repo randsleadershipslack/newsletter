@@ -104,7 +104,7 @@ class Message:
         for user in users:
             print("Notifying {}".format(user))
             if not dry:
-                slack.api_call("chat.postMessage", channel=user, text=default_message, as_user=from_user)
+                slack.api_call("chat.postMessage", channel=user, text=default_message, as_user=from_user.username)
 
 
 if __name__ == '__main__':
