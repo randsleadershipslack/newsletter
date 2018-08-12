@@ -81,7 +81,9 @@ class MyParser(HTMLParser):
 
     def handle_data(self, data):
         if self.extract:
-            self.extracted.append(data)
+            if not "edited by" in data:
+                self.extracted.append(data)
+
 
     def _extract_usernames(self):
         found = []
