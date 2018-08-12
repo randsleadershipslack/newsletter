@@ -1,12 +1,8 @@
 #! /usr/bin/env python3
 
 import argparse
-# import datetime
 from slackclient import SlackClient
 import os
-# import re
-# import sys
-# import textwrap
 
 token = "garbage"
 try:
@@ -15,6 +11,8 @@ except:
     pass
 
 slack = SlackClient(token)
+
+default_message = """:robot_face:Beep-boop:robot_face:"""
 
 
 class Options(argparse.ArgumentParser):
@@ -63,9 +61,29 @@ class Options(argparse.ArgumentParser):
         self.usernames = sorted(normalized, key=lambda s: s.casefold())
 
 
+class OriginatingUser:
+    """
+    Information about the originating user.
+    """
+
+    def __init__(self):
+        response = slack.api_call("users.profile.get")
+        if not response['ok']:
+            print(response['headers'])
+            raise RuntimeError
+        profile = response['profile']
+        self.username = "@" + profile['display_name_normalized']
+        self.firstname = self.username
+        if profile['first_name']:
+            self.firstname = profile['first_name']
+
+
 if __name__ == '__main__':
     options = Options()
     options.store_args()
 
-    print(options.usernames)
+    from_user = OriginatingUser()
 
+    user="@slackbot"
+    print("Notifying {}".format(user))
+    response = slack.api_call("chat.postMessage", channel=user, text=default_message, as_user=from_user)
