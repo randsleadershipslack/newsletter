@@ -346,7 +346,7 @@ if __name__ == '__main__':
         for (user_id, user) in users.items():
             user.fetch_name()
 
-        if not channel.messages:
+        if not channel.messages or channel.threads:
             continue
 
         channel.filter_threads(options.parsed_args.threads)
