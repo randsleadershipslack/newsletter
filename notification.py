@@ -87,13 +87,17 @@ class Message:
     Handle formatting the message to be sent and sending it as appropriate
     """
 
-    def __init__(self):
+    def __init__(self, message_file):
+        self._message = default_message
+        if message_file:
+            with open(message_file, 'r') as f:
+                self._message = f.read()
         pass
 
     def send(self, from_user, users, dry=False):
         if dry:
             print("-" * 80)
-            print(default_message)
+            print(self._message)
             print("-" * 80)
             print("")
 
@@ -112,5 +116,5 @@ if __name__ == '__main__':
     #TODO: temp
     options.usernames = ["@slackbot"]
 
-    message = Message()
+    message = Message(message_file=options.parsed_args.message)
     message.send(from_user, options.usernames, dry=options.parsed_args.dry)
