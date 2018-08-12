@@ -342,14 +342,14 @@ if __name__ == '__main__':
     total_channels = 0
     for channel in channels:
         channel.fetch_messages(options.start_timestamp, options.end_timestamp, options.parsed_args.reactions, users)
+        channel.filter_threads(options.parsed_args.threads)
+
+        if not (channel.messages or channel.threads):
+            continue
 
         for (user_id, user) in users.items():
             user.fetch_name()
 
-        if not channel.messages or channel.threads:
-            continue
-
-        channel.filter_threads(options.parsed_args.threads)
         channel.messages.reverse()
         channel.annotate_messages(users)
         channel.annotate_threads()
