@@ -25,8 +25,9 @@ The current draft is at {1}
 We would like you to agree to the inclusion of your content.  Ideally,
 you’d provide blanket inclusion approval, but if you’d like to have
 finer control, or even blanket exclusion, that’s perfectly acceptable
-as well.  *If you don’t specifically approve your mentions/content by
-{2}, we will exclude it*.
+as well.
+
+*If you don’t specifically approve your mentions/content by {2}, we will exclude it*.
 
 {0} will see your response to this message, which can be as
 short as “Ok” (just this newsletter), “Ok - always”, “No”, and
@@ -142,7 +143,7 @@ class Message:
         for user in users:
             if not dry:
                 print("Notifying {}".format(user))
-                slack.api_call("chat.postMessage", channel=user, text=default_message, as_user=from_user.username)
+                slack.api_call("chat.postMessage", channel=user, text=self._message, as_user=from_user.username)
             else:
                 print("Would have notified {}".format(user))
 
@@ -152,9 +153,6 @@ if __name__ == '__main__':
     options.store_args()
 
     from_user = OriginatingUser()
-
-    #TODO: temp
-    options.usernames = ["@slackbot"]
 
     message = Message(message_file=options.parsed_args.message, url=options.parsed_args.url,
                       deadline=options.parsed_args.deadline, from_user=from_user)
