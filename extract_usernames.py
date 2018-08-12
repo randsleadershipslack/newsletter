@@ -1,14 +1,11 @@
 #! /usr/bin/env python3
 
 import argparse
-# import datetime
-from slackclient import SlackClient
-import requests
 from html.parser import HTMLParser
-# import os
+import os
 import re
-# import sys
-# import textwrap
+import requests
+from slackclient import SlackClient
 
 token = "garbage"
 try:
@@ -27,42 +24,41 @@ class Options(argparse.ArgumentParser):
     def __init__(self):
         super().__init__(description='Extract a list of user names from a given post.')
         self.parsed_args = None
-#         self.start_date = datetime.date.today()
-#         self.end_date = datetime.date.today()
-#         self.start_timestamp = datetime.datetime.now()
-#         self.end_timestamp = datetime.datetime.now()
-#         self._whitelist = []
-#         self._blacklist = []
-#
+        self._blacklist = []
+
         self.add_argument("post",
                           help="The post to extract the names from")
-#         self.add_argument("--exclude", nargs='+', metavar="CHANNEL",
-#                           help="Specifically exclude the given channel(s) (regular expressions allowed)")
-#         self.add_argument("--exclude-list", metavar="FILE",
-#                           help="Specifically exclude the channel(s) given in the file (regular expressions allowed)")
+        self.add_argument("--exclude", nargs='+', metavar="USER",
+                          help="Specifically exclude the given user(s)")
+        self.add_argument("--exclude-list", metavar="FILE",
+                          help="Specifically exclude the user(s) given in the file (one per line)")
 #
     def store_args(self):
         self.parsed_args = self.parse_args()
-#         self._extract_dates()
-#         self._compile_lists()
-#
-#
-# class User:
-#     """
-#     Tracks and aggregates information specific to a user.
-#     """
-#
-#     def __init__(self, user_id):
-#         self.id = user_id
-#         self.real_name = ""
-#         self.display_name = ""
-#
-#     def fetch_name(self):
-#         if not self.real_name and not self.display_name:
-#             response = slack.api_call("users.info", user=self.id)
-#             if response['ok']:
-#                 self.real_name = response['user']['profile']['real_name']
-#                 self.display_name = response['user']['profile']['display_name']
+        self._compile_blacklist()
+
+    def _compile_blacklist(self):
+        self._add_command_line_exclusions()
+        self._exclude_channels_from_file()
+
+    def _add_command_line_exclusions(self):
+        if self.parsed_args.exclude:
+            for user in self.parsed_args.exclude:
+                self._blacklist.append(user)
+
+    def _exclude_channels_from_file(self):
+        if self.parsed_args.exclude_list:
+            with open(self.parsed_args.exclude_list, 'r') as f:
+                for line in f:
+                    self._blacklist.append(line.rstrip('\n') )
+
+    def filter_users(self, users):
+        filtered = []
+        for user in users:
+            if user not in self._blacklist:
+                filtered.append(user)
+
+        return filtered
 
 
 class MyParser(HTMLParser):
@@ -89,7 +85,7 @@ class MyParser(HTMLParser):
 
     def _extract_usernames(self):
         found = []
-        matcher = re.compile("(@[a-zA-Z.]+( [A-Z][a-z]+)?)")
+        matcher = re.compile("(@[a-zA-Z][a-zA-Z.][a-zA-Z]+( [A-Z][a-z]+)?)")
         for line in self.extracted:
             found.extend(re.findall(matcher, line))
         unique = set()
@@ -106,5 +102,5 @@ if __name__ == '__main__':
     post = requests.get(options.parsed_args.post)
 
     parser = MyParser(post.text)
-    for user in parser.usernames:
+    for user in options.filter_users(parser.usernames):
         print(user)
