@@ -20,6 +20,10 @@ This will format a message as if from a robot, letting them know about
 potential newsletter inclusion and how to allow (or reject) the
 inclusion.
 
+## Improvements
+There might be a problem with full-name identification in order to send
+a message.  This needs investigated.
+
 ## Example Message
 > :robot_face:I am a bot, posting on behalf of Caleb. Beep-boop:robot_face:
 
