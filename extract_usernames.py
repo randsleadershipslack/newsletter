@@ -3,28 +3,22 @@
 import argparse
 # import datetime
 from slackclient import SlackClient
+import requests
+from html.parser import HTMLParser
 # import os
-# import re
+import re
 # import sys
 # import textwrap
-#
-# token = "garbage"
-# try:
-#     token = os.environ['API_TOKEN']
-# except:
-#     pass
-#
-# slack = SlackClient(token)
-#
-#
-# def valid_date(s):
-#     try:
-#         return datetime.datetime.strptime(s, "%Y-%m-%d").date()
-#     except ValueError:
-#         msg = "Not a valid date: '{0}'.".format(s)
-#         raise argparse.ArgumentTypeError(msg)
-#
-#
+
+token = "garbage"
+try:
+    token = os.environ['API_TOKEN']
+except:
+    pass
+
+slack = SlackClient(token)
+
+
 class Options(argparse.ArgumentParser):
     """
     Consolidates the argument handling.
@@ -42,20 +36,6 @@ class Options(argparse.ArgumentParser):
 #
         self.add_argument("post",
                           help="The post to extract the names from")
-#         self.add_argument("--week", type=int, default=1, metavar="N",
-#                           help="Fetch messages from N weeks ago (default: %(default)s)")
-#         self.add_argument("--start", type=valid_date, metavar="YYYY-MM-DD",
-#                           help="Fetch messages from the given date.  Overrides week start.")
-#         self.add_argument("--end", type=valid_date, metavar="YYYY-MM-DD",
-#                           help="Fetch messages up to the given date.  Overrides week end.")
-#         self.add_argument("--channel", "--channels", nargs='+', metavar="CHANNEL",
-#                           help="Only examine the given channel(s) (regular expressions allowed)")
-#         self.add_argument("--channel-list", metavar="FILE",
-#                           help="Only examine the channel(s) given in the file (regular expressions allowed)")
-#         self.add_argument("--reactions", type=int, default=3, metavar="THRESHOLD",
-#                           help="The number of reactions necessary for retaining in the digest (default: %(default)s)")
-#         self.add_argument("--threads", type=int, default=10, metavar="THRESHOLD",
-#                           help="The number of replies necessary for retaining a thread in the digest (default: %(default)s)")
 #         self.add_argument("--exclude", nargs='+', metavar="CHANNEL",
 #                           help="Specifically exclude the given channel(s) (regular expressions allowed)")
 #         self.add_argument("--exclude-list", metavar="FILE",
@@ -65,181 +45,6 @@ class Options(argparse.ArgumentParser):
         self.parsed_args = self.parse_args()
 #         self._extract_dates()
 #         self._compile_lists()
-#
-#     @staticmethod
-#     def _find_week(week):
-#         ago = datetime.date.today() - datetime.timedelta(week * 7)
-#         if ago.weekday() == 6:
-#             start_date = ago
-#         else:
-#             start_date = ago - datetime.timedelta(7 - ((6 - ago.weekday()) % 7))
-#         end_date = start_date + datetime.timedelta(7)
-#         return start_date, end_date
-#
-#     def _extract_dates(self):
-#         # Work in dates to force the beginning of the day
-#         if self.parsed_args.week:
-#             self.start_date, self.end_date = Options._find_week(self.parsed_args.week)
-#
-#         if self.parsed_args.start:
-#             self.start_date = self.parsed_args.start
-#
-#         if self.parsed_args.end:
-#             self.end_date = self.parsed_args.end
-#
-#         if self.start_date > self.end_date:
-#             raise ValueError
-#
-#         self.start_timestamp = datetime.datetime.combine(self.start_date, datetime.time())
-#         self.end_timestamp = datetime.datetime.combine(self.end_date, datetime.time())
-#
-#         # Return datetimes to allow easy timestamp conversion
-#         return self.start_timestamp, self.end_timestamp
-#
-#     def _compile_lists(self):
-#         self._add_command_line_channels()
-#         self._add_channels_from_file()
-#         self._add_command_line_exclusions()
-#         self._exclude_channels_from_file()
-#
-#     def _add_command_line_channels(self):
-#         if self.parsed_args.channel:
-#             for channel in self.parsed_args.channel:
-#                 self._whitelist.append(re.compile(channel))
-#
-#     def _add_command_line_exclusions(self):
-#         if self.parsed_args.exclude:
-#             for channel in self.parsed_args.exclude:
-#                 self._blacklist.append(re.compile(channel))
-#
-#     def _add_channels_from_file(self):
-#         if self.parsed_args.channel_list:
-#             with open(self.parsed_args.channel_list, 'r') as f:
-#                 for line in f:
-#                     for channel in line.split():
-#                         self._whitelist.append(re.compile(channel))
-#
-#     def _exclude_channels_from_file(self):
-#         if self.parsed_args.exclude_list:
-#             with open(self.parsed_args.exclude_list, 'r') as f:
-#                 for line in f:
-#                     for channel in line.split():
-#                         self._blacklist.append(re.compile(channel))
-#
-#     def filter_channel(self, name):
-#         if any(expression.match(name) for expression in self._whitelist):
-#             return False
-#         elif any(expression.match(name) for expression in self._blacklist):
-#             return True
-#         elif not (self._whitelist or 'zmeta' in name):
-#             return False
-#         return True
-#
-#
-# class Message:
-#     """
-#     Tracks information about a particular message
-#     """
-#
-#     def __init__(self, channel_id, user_id, text, ts):
-#         self.channel_id = channel_id
-#         self.user = user_id
-#         self.text = text
-#         self.ts = ts
-#         time = datetime.datetime.fromtimestamp(float(ts))
-#         time = time.replace(second=0, microsecond=0)
-#         self.time = time.isoformat(sep=" ")
-#         self.user_showname = ""
-#         self.url = ""
-#
-#     def annotate_user(self, user):
-#         if user:
-#             if user.display_name:
-#                 self.user_showname = user.display_name
-#             else:
-#                 self.user_showname = user.real_name
-#
-#     def annotate_link(self):
-#         response = slack.api_call("chat.getPermalink", channel=self.channel_id, message_ts=self.ts)
-#         if response['ok']:
-#             self.url = response['permalink']
-#
-#
-# class Channel:
-#     """
-#     Tracks and aggregates information specific to a channel.
-#     """
-#
-#     def __init__(self, channel_id, name):
-#         self.id = channel_id
-#         self.name = name
-#         self.messages = []
-#
-#     def fetch_messages(self, start, end, required_reactions, users):
-#         if required_reactions < 1:
-#             raise ValueError
-#
-#         self.messages = []
-#         self.threads = {}
-#         more = True
-#         start_from = start.timestamp()
-#         end_at = end.timestamp()
-#         while more:
-#             response = slack.api_call("channels.history", channel=self.id, inclusive=False, oldest=start_from,
-#                                       latest=end_at, count=500)
-#             if response['ok']:
-#                 more = response['has_more']
-#                 message_list = response['messages']
-#                 for message in message_list:
-#                     if Channel._has_enough_reactions(message, required_reactions):
-#                         self._remember_message(message)
-#                         Channel._remember_user(message, users)
-#                     self._accumulate_thread(message)
-#                     end_at = message["ts"]
-#             else:
-#                 print(response['headers'])
-#                 raise RuntimeError
-#
-#     @staticmethod
-#     def _has_enough_reactions(message, required_reactions):
-#         if 'reactions' not in message:
-#             return False
-#         reaction_count = 0
-#         for reaction in message['reactions']:
-#             reaction_count += int(reaction['count'])
-#         return reaction_count >= required_reactions
-#
-#     def _remember_message(self, message):
-#         self.messages.append(Message(self.id, message['user'], message['text'], message['ts']))
-#
-#     def _accumulate_thread(self, message):
-#         root = message.get("thread_ts")
-#         if root and root != message["ts"]:
-#             self.threads[root] = self.threads.get(root, 0) + 1
-#
-#     @staticmethod
-#     def _remember_user(message, users):
-#         user = users.get(message['user'], None)
-#         if not user:
-#             user = User(message['user'])
-#             users[user.id] = user
-#
-#     def annotate_messages(self, users):
-#         for message in self.messages:
-#             message.annotate_user(users[message.user])
-#             message.annotate_link()
-#
-#     def filter_threads(self, required_responses):
-#         filtered = {}
-#         for root, count in self.threads.items():
-#             if count >= required_responses:
-#                 message = Message(self.id, None, None, root)
-#                 filtered[message] = count
-#         self.threads = filtered
-#
-#     def annotate_threads(self):
-#         for root in self.threads.keys():
-#             root.annotate_link()
 #
 #
 # class User:
@@ -258,113 +63,48 @@ class Options(argparse.ArgumentParser):
 #             if response['ok']:
 #                 self.real_name = response['user']['profile']['real_name']
 #                 self.display_name = response['user']['profile']['display_name']
-#
-#
-# def get_channels(options):
-#     response = slack.api_call("channels.list", exclude_archived=1, exclude_members=1)
-#     channels = []
-#     if response["ok"]:
-#         for channel in response["channels"]:
-#             name = channel['name']
-#             channel_id = channel['id']
-#             if not options.filter_channel(name):
-#                 channels.append(Channel(channel_id=channel_id, name=name))
-#     return channels
-#
-#
-# class Writer:
-#     """
-#     Writes the message information to file
-#     """
-#
-#     def __init__(self):
-#         self.folder_name = Writer._create_folder()
-#         self.wrapper = textwrap.TextWrapper(width=80, expand_tabs=False, replace_whitespace=False,
-#                                             drop_whitespace=False)
-#         pass
-#
-#     @staticmethod
-#     def _create_folder():
-#         name = datetime.date.today().isoformat()
-#         try:
-#             if not os.path.exists(name):
-#                 os.makedirs(name)
-#         except OSError:
-#             print('Error: Creating name. ' + name)
-#             raise
-#         return name
-#
-#     def _filename(self, channel):
-#         return self.folder_name + "/" + channel.name + ".txt"
-#
-#     @staticmethod
-#     def _formatted_header(channel):
-#         name = "==  {0}  ==".format(channel.name)
-#         box = "{0}".format("=" * len(name))
-#         return "{0}\n{1}\n{0}\n\n".format(box, name)
-#
-#     def _formatted_message(self, message):
-#         separator = "-" * 80
-#         return "{0}\n{1}\n@{2} wrote on {3}\n{0}\n{4}\n".format(
-#             separator, message.url, message.user_showname, message.time, self.wrapper.fill(message.text))
-#
-#     def _formatted_thread(self, thread_root, count):
-#         separator = "-" * 80
-#         return "{0}\n{1} replies: {2}\n".format(separator, count, thread_root.url)
-#
-#     def write_channel(self, channel):
-#         with open(self._filename(channel), 'w') as f:
-#             f.write(Writer._formatted_header(channel))
-#             for message in channel.messages:
-#                 f.write(self._formatted_message(message))
-#                 f.write("\n")
-#
-#             f.write("\n")
-#             f.write("Threaded messages: {}".format(len(channel.threads)))
-#             f.write("\n")
-#             for thread_root, count in channel.threads.items():
-#                 f.write(self._formatted_thread(thread_root, count))
-#                 f.write("\n")
-#
-#
+
+
+class MyParser(HTMLParser):
+    def __init__(self, text):
+        super().__init__()
+        self.extract = False
+        self.extracted = []
+        self.usernames = []
+
+        self.feed(text)
+        self._extract_usernames()
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "ts-rocket":
+            self.extract = True
+
+    def handle_endtag(self, tag):
+        if tag == "ts-rocket":
+            self.extract = False
+
+    def handle_data(self, data):
+        if self.extract:
+            self.extracted.append(data)
+
+    def _extract_usernames(self):
+        found = []
+        matcher = re.compile("(@[a-zA-Z.]+( [A-Z][a-z]+)?)")
+        for line in self.extracted:
+            found.extend(re.findall(matcher, line))
+        unique = set()
+        for full, last in found:
+            unique.add(full)
+
+        self.usernames = sorted(unique, key=lambda s: s.casefold())
+
+
 if __name__ == '__main__':
     options = Options()
     options.store_args()
 
-    print(options.parsed_args.post)
-#     print("Looking for messages from {0} to {1}".format(options.start_date.isoformat(), options.end_date.isoformat()))
-#
-#     users = {}
-#     channels = get_channels(options)
-#     print("Found {0} channels".format(len(channels)))
-#     if not channels:
-#         sys.exit()
-#
-#     writer = Writer()
-#     total_messages = 0
-#     total_threads = 0
-#     total_channels = 0
-#     for channel in channels:
-#         channel.fetch_messages(options.start_timestamp, options.end_timestamp, options.parsed_args.reactions, users)
-#         channel.filter_threads(options.parsed_args.threads)
-#
-#         if not (channel.messages or channel.threads):
-#             continue
-#
-#         for (user_id, user) in users.items():
-#             user.fetch_name()
-#
-#         channel.messages.reverse()
-#         channel.annotate_messages(users)
-#         channel.annotate_threads()
-#
-#         writer.write_channel(channel)
-#         total_messages += len(channel.messages)
-#         total_threads += len(channel.threads)
-#         total_channels += 1
-#         print("\t{0}: {1} potential messages, {2} long threads".format(channel.name, len(channel.messages),
-#                                                                        len(channel.threads)))
-#
-#     if len(channels) > 1:
-#         print("\nFound {0} potential messages and {1} long threads across {2} channels".format(
-#             total_messages, total_threads, total_channels))
+    post = requests.get(options.parsed_args.post)
+
+    parser = MyParser(post.text)
+    for user in parser.usernames:
+        print(user)
