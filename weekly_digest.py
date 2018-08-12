@@ -363,5 +363,5 @@ if __name__ == '__main__':
                                                                        len(channel.threads)))
 
     if len(channels) > 1:
-        print("\nFound {0} potential messages and {2} long threads across {1} channels".format(
-            total_messages, total_channels, total_threads))
+        print("\nFound {0} potential messages and {1} long threads across {2} channels".format(
+            total_messages, total_threads, total_channels))
