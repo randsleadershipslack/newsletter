@@ -28,8 +28,8 @@ finer control, or even blanket exclusion, that’s perfectly acceptable
 as well.  *If you don’t specifically approve your mentions/content by
 {2}, we will exclude it*.
 
-{0} will be able to see your response to this message, which can
-be as short as “Ok” (just this newsletter), “Ok - always”, “No”, and
+{0} will see your response to this message, which can be as
+short as “Ok” (just this newsletter), “Ok - always”, “No”, and
 “No - always” (or :thumbsup:/:thumbsdown:).
 
 If you have questions, please either reply here, or in #rands-newsletter if
@@ -52,11 +52,21 @@ class Options(argparse.ArgumentParser):
         self.usernames = []
 
         self.add_argument("--users", "--user", nargs='+', metavar="USER",
-                          help="Notify the given user(s)")
+                          help="Notify the given user(s).  "
+                               "Must provide users either on the command line or via file")
         self.add_argument("--user_list", metavar="FILE",
-                          help="Notify the user(s) given in the file (one per line)")
+                          help="Notify the user(s) given in the file (one per line).  "
+                               "Must provide users either on the command line or via file")
+        self.add_argument("--url",
+                          help="Use the given *public* url in the message.  "
+                               "Must include either url/deadline OR a message file")
+        self.add_argument("--deadline", metavar="DATE",
+                          help="Use the given deadline for responses in the message (pass in quotes, as in "
+                               "'Monday 9 AM Pacific').  "
+                               "Must include either url/deadline OR a message file")
         self.add_argument("--message", metavar="FILE",
-                          help="Use the given file's contents as the message to send")
+                          help="Use the given file's contents as the message to send.  "
+                               "Must include either url/deadline OR a message file")
         self.add_argument("--dry", action="store_true",
                           help="Print the message and users, but don't actually send the messages")
 
@@ -65,6 +75,8 @@ class Options(argparse.ArgumentParser):
         self._compile_lists()
         if not self.usernames:
             self.error("At least one user or file of users is required.")
+        if not ((self.parsed_args.url and self.parsed_args.deadline) or self.parsed_args.message):
+            self.error("Either URL and deadline or message file is required.")
         self._normalize_usernames()
 
     def _compile_lists(self):
@@ -113,8 +125,8 @@ class Message:
     Handle formatting the message to be sent and sending it as appropriate
     """
 
-    def __init__(self, message_file, from_user):
-        self._message = default_message.format("Caleb", "URL", "DATE")
+    def __init__(self, message_file, url, deadline, from_user):
+        self._message = default_message.format(from_user.firstname, url, deadline)
         if message_file:
             with open(message_file, 'r') as f:
                 self._message = f.read()
@@ -144,5 +156,6 @@ if __name__ == '__main__':
     #TODO: temp
     options.usernames = ["@slackbot"]
 
-    message = Message(message_file=options.parsed_args.message, from_user=from_user)
+    message = Message(message_file=options.parsed_args.message, url=options.parsed_args.url,
+                      deadline=options.parsed_args.deadline, from_user=from_user)
     message.send(from_user, options.usernames, dry=options.parsed_args.dry)
