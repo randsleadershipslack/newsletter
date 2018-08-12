@@ -12,7 +12,7 @@ except:
 
 slack = SlackClient(token)
 
-default_message = """:robot_face:Beep-boop:robot_face:"""
+default_message = """:robot_face:I am a bot. Beep-boop:robot_face:"""
 
 
 class Options(argparse.ArgumentParser):
@@ -29,6 +29,8 @@ class Options(argparse.ArgumentParser):
                           help="Notify the given user(s)")
         self.add_argument("--user_list", metavar="FILE",
                           help="Notify the user(s) given in the file (one per line)")
+        self.add_argument("--dry", action="store_true",
+                          help="Print the message and users, but don't actually send the messages")
 
     def store_args(self):
         self.parsed_args = self.parse_args()
@@ -84,6 +86,13 @@ if __name__ == '__main__':
 
     from_user = OriginatingUser()
 
+    if options.parsed_args.dry:
+        print("-" * 80)
+        print(default_message)
+        print("-" * 80)
+        print("")
+
     user="@slackbot"
     print("Notifying {}".format(user))
-    response = slack.api_call("chat.postMessage", channel=user, text=default_message, as_user=from_user)
+    if not options.parsed_args.dry:
+        response = slack.api_call("chat.postMessage", channel=user, text=default_message, as_user=from_user)
