@@ -176,6 +176,7 @@ class Channel:
             raise ValueError
 
         self.messages = []
+        self.threads = {}
         more = True
         start_from = start.timestamp()
         end_at = end.timestamp()
@@ -189,6 +190,7 @@ class Channel:
                     if Channel._has_enough_reactions(message, required_reactions):
                         self._remember_message(message)
                         Channel._remember_user(message, users)
+                    self._accumulate_thread(message)
                     end_at = message["ts"]
             else:
                 print(response['headers'])
@@ -206,6 +208,11 @@ class Channel:
     def _remember_message(self, message):
         self.messages.append(Message(self.id, message['user'], message['text'], message['ts']))
 
+    def _accumulate_thread(self, message):
+        root = message.get("thread_ts")
+        if root and root != message["ts"]:
+            self.threads[root] = self.threads.get(root, 0) + 1
+
     @staticmethod
     def _remember_user(message, users):
         user = users.get(message['user'], None)
@@ -217,6 +224,18 @@ class Channel:
         for message in self.messages:
             message.annotate_user(users[message.user])
             message.annotate_link()
+
+    def filter_threads(self, required_responses):
+        filtered = {}
+        for root, count in self.threads.items():
+            if count >= required_responses:
+                message = Message(self.id, None, None, root)
+                filtered[message] = count
+        self.threads = filtered
+
+    def annotate_threads(self):
+        for root in self.threads.keys():
+            root.annotate_link()
 
 
 class User:
@@ -285,11 +304,22 @@ class Writer:
         return "{0}\n{1}\n@{2} wrote on {3}\n{0}\n{4}\n".format(
             separator, message.url, message.user_showname, message.time, self.wrapper.fill(message.text))
 
+    def _formatted_thread(self, thread_root, count):
+        separator = "-" * 80
+        return "{0}\n{1} replies: {2}\n".format(separator, count, thread_root.url)
+
     def write_channel(self, channel):
         with open(self._filename(channel), 'w') as f:
             f.write(Writer._formatted_header(channel))
             for message in channel.messages:
                 f.write(self._formatted_message(message))
+                f.write("\n")
+
+            f.write("\n")
+            f.write("Threaded messages: {}".format(len(channel.threads)))
+            f.write("\n")
+            for thread_root, count in channel.threads.items():
+                f.write(self._formatted_thread(thread_root, count))
                 f.write("\n")
 
 
@@ -317,8 +347,10 @@ if __name__ == '__main__':
         if not channel.messages:
             continue
 
+        channel.filter_threads(10)
         channel.messages.reverse()
         channel.annotate_messages(users)
+        channel.annotate_threads()
 
         writer.write_channel(channel)
         total_messages += len(channel.messages)
