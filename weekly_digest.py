@@ -339,6 +339,7 @@ if __name__ == '__main__':
 
     writer = Writer()
     total_messages = 0
+    total_threads = 0
     total_channels = 0
     for channel in channels:
         channel.fetch_messages(options.start_timestamp, options.end_timestamp, options.parsed_args.reactions, users)
@@ -356,8 +357,11 @@ if __name__ == '__main__':
 
         writer.write_channel(channel)
         total_messages += len(channel.messages)
+        total_threads += len(channel.threads)
         total_channels += 1
-        print("\t{0}: {1} potential messages".format(channel.name, len(channel.messages)))
+        print("\t{0}: {1} potential messages, {2} long threads".format(channel.name, len(channel.messages),
+                                                                       len(channel.threads)))
 
     if len(channels) > 1:
-        print("\nFound {0} potential messages across {1} channels".format(total_messages, total_channels))
+        print("\nFound {0} potential messages and {2} long threads across {1} channels".format(
+            total_messages, total_channels, total_threads))
