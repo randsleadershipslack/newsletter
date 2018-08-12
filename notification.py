@@ -35,6 +35,7 @@ class Options(argparse.ArgumentParser):
         self._compile_lists()
         if not self.usernames:
             self.error("At least one user or user-file is required.")
+        self._normalize_usernames()
 
     def _compile_lists(self):
         self._add_command_line_users()
@@ -42,6 +43,15 @@ class Options(argparse.ArgumentParser):
     def _add_command_line_users(self):
         if self.parsed_args.users:
             self.usernames.extend(self.parsed_args.users)
+
+    def _normalize_usernames(self):
+        normalized = set()
+        for user in self.usernames:
+            if user[0] == '@':
+                normalized.add(user)
+            else:
+                normalized.add('@' + user)
+        self.usernames = sorted(normalized, key=lambda s: s.casefold())
 
 
 if __name__ == '__main__':
