@@ -29,6 +29,8 @@ class Options(argparse.ArgumentParser):
                           help="Notify the given user(s)")
         self.add_argument("--user_list", metavar="FILE",
                           help="Notify the user(s) given in the file (one per line)")
+        self.add_argument("--message", metavar="FILE",
+                          help="Use the given file's contents as the message to send")
         self.add_argument("--dry", action="store_true",
                           help="Print the message and users, but don't actually send the messages")
 
@@ -80,19 +82,35 @@ class OriginatingUser:
             self.firstname = profile['first_name']
 
 
+class Message:
+    """
+    Handle formatting the message to be sent and sending it as appropriate
+    """
+
+    def __init__(self):
+        pass
+
+    def send(self, from_user, users, dry=False):
+        if dry:
+            print("-" * 80)
+            print(default_message)
+            print("-" * 80)
+            print("")
+
+        for user in users:
+            print("Notifying {}".format(user))
+            if not dry:
+                slack.api_call("chat.postMessage", channel=user, text=default_message, as_user=from_user)
+
+
 if __name__ == '__main__':
     options = Options()
     options.store_args()
 
     from_user = OriginatingUser()
 
-    if options.parsed_args.dry:
-        print("-" * 80)
-        print(default_message)
-        print("-" * 80)
-        print("")
+    #TODO: temp
+    options.usernames = ["@slackbot"]
 
-    user="@slackbot"
-    print("Notifying {}".format(user))
-    if not options.parsed_args.dry:
-        response = slack.api_call("chat.postMessage", channel=user, text=default_message, as_user=from_user)
+    message = Message()
+    message.send(from_user, options.usernames, dry=options.parsed_args.dry)
