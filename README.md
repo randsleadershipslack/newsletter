@@ -1,54 +1,36 @@
 # newsletter
 Utilities to help collate/organize the rands-leadership-slack newsletter
 
-## Digest
-You'll need to have API_TOKEN env variable set for a Slack API token, 
+## Authentication
+Most utilities need to have API_TOKEN env variable set for a Slack API token, 
 which you can get from https://api.slack.com/docs/oauth-test-tokens
+
+## [Digest](WEEKLY_DIGEST_README.md)
+
+This will search slack for channels and then for messages in each 
+channel that have reactions or a large number of threaded responses.
+It will put these inside a subdirectory named for today's date, with 
+a text file for each channel for which messages were found.
 
 ### Default Usage
 
 ```bash
-> env API_TOKEN=<YOUR_SECRET_API_TOKEN> ./weekly_digest.py
-```
-or
-```bash
 > env API_TOKEN=<YOUR_SECRET_API_TOKEN> ./weekly_digest.py --exclude-list ./default_exclude.txt
 ```
 
-This will search slack for channels and then for messages in each 
-channel that have reactions.  It will put these inside a subdirectory 
-named for today's date, with a text file for each channel for which 
-messages were found.
+## [Usernames](EXTRACT_USERNAMES_README.md)
 
-### Options
+This will download a given post (via it's _publicly available_ url)
+and scan it for usernames mentioned in the post, printing a sorted
+list of those usernames.
+
+### Default Usage
 
 ```bash
-> ./weekly_digest.py --help
-Create a digest of reacted-to posts from a given week.
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --week N              Fetch messages from N weeks ago (default: 1)
-  --start YYYY-MM-DD    Fetch messages from the given date. Overrides week
-                        start.
-  --end YYYY-MM-DD      Fetch messages up to the given date. Overrides week
-                        end.
-  --channel CHANNEL [CHANNEL ...], --channels CHANNEL [CHANNEL ...]
-                        Only examine the given channel(s) (regular expressions
-                        allowed)
-  --channel-list FILE   Only examine the channel(s) given in the file (regular
-                        expressions allowed)
-  --reactions THRESHOLD
-                        The number of reactions necessary for retaining in the
-                        digest (default: 3)
-  --exclude CHANNEL [CHANNEL ...]
-                        Specifically exclude the given channel(s) (regular
-                        expressions allowed)
-  --exclude-list FILE   Specifically exclude the channel(s) given in the file
-                        (regular expressions allowed)
+> ./extract_usernames.py <URL> --exclude-list ./evergreen_permissions.txt
 ```
 
-### Setup/Install
+## Setup/Install
 
 Install all required python packages:
 
