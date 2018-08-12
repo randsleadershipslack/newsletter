@@ -13,7 +13,7 @@ for responses.  The default shown below is also marked to do a dry run
 (not actually notify anyone).
 
 ```bash
-> env API_TOKEN=<YOUR_SECRET_API_TOKEN> ./notification.py --url https://slack-files.com/T04T4TH8W-FC8263BF1-c513d92bbb --deadline "Monday 9 AM Pacific" --user_list ./users.txt --dry
+> env API_TOKEN=<YOUR_SECRET_API_TOKEN> ./notification.py --url <URL> --deadline "Monday 9 AM Pacific" --user_list ./users.txt --dry
 ```
 
 This will format a message as if from a robot, letting them know about 

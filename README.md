@@ -30,6 +30,18 @@ list of those usernames.
 > ./extract_usernames.py <URL> --exclude-list ./evergreen_permissions.txt
 ```
 
+## [Notification](NOTIFICATION_README.md)
+
+This will format a message as if from a robot, letting them know about 
+potential newsletter inclusion and how to allow (or reject) the
+inclusion.
+
+### Default Usage
+
+```bash
+> env API_TOKEN=<YOUR_SECRET_API_TOKEN> ./notification.py --url <URL> --deadline "Monday 9 AM Pacific" --user_list ./users.txt --dry
+```
+
 ## Setup/Install
 
 Install all required python packages:
