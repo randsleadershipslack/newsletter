@@ -195,17 +195,15 @@ def FetchUserIds(users):
                     users.remove(real_name)
 
         if not users:
-            return user_ids
+            return user_ids, users
 
         if not 'response_metadata' in response:
-            return user_ids
+            return user_ids, users
         elif not 'next_cursor' in response['response_metadata']:
-            return user_ids
+            return user_ids, users
         next = response['response_metadata']['next_cursor']
         if not next:
-            return user_ids
-
-    return users
+            return user_ids, users
 
 
 if __name__ == '__main__':
@@ -213,8 +211,12 @@ if __name__ == '__main__':
     options.store_args()
 
     from_user = OriginatingUser()
-    user_ids = FetchUserIds(options.usernames)
+    (user_ids, unidentified_users) = FetchUserIds(options.usernames)
 
     message = Message(message_file=options.parsed_args.message, url=options.parsed_args.url,
                       deadline=options.parsed_args.deadline, from_user=from_user)
     message.send(from_user, user_ids, dry=options.parsed_args.dry)
+
+    print("Unable to identify the following users")
+    for user in unidentified_users:
+        print("@{}".format(user))
