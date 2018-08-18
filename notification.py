@@ -217,6 +217,8 @@ if __name__ == '__main__':
                       deadline=options.parsed_args.deadline, from_user=from_user)
     message.send(from_user, user_ids, dry=options.parsed_args.dry)
 
-    print("Unable to identify the following users")
-    for user in unidentified_users:
-        print("@{}".format(user))
+    if unidentified_users:
+        print()
+        print("*** Unable to identify the following users ***")
+        for user in unidentified_users:
+            print("@{}".format(user))
