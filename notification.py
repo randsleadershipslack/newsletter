@@ -3,6 +3,7 @@
 import argparse
 from slackclient import SlackClient
 import os
+import time
 
 token = "garbage"
 try:
@@ -98,9 +99,9 @@ class Options(argparse.ArgumentParser):
         normalized = set()
         for user in self.usernames:
             if user[0] == '@':
-                normalized.add(user)
+                normalized.add(user[1:])
             else:
-                normalized.add('@' + user)
+                normalized.add(user)
         self.usernames = sorted(normalized, key=lambda s: s.casefold())
 
 
@@ -112,13 +113,23 @@ class OriginatingUser:
     def __init__(self):
         response = slack.api_call("users.profile.get")
         if not response['ok']:
-            print(response['headers'])
+            print(response)
             raise RuntimeError
         profile = response['profile']
         self.username = "@" + profile['display_name_normalized']
         self.firstname = self.username
         if profile['first_name']:
             self.firstname = profile['first_name']
+
+
+class User:
+    """
+    Tracks and aggregates information specific to a user.
+    """
+
+    def __init__(self, user_id, name):
+        self.id = user_id
+        self.name = name
 
 
 class Message:
@@ -142,10 +153,57 @@ class Message:
 
         for user in users:
             if not dry:
-                print("Notifying {}".format(user))
-                slack.api_call("chat.postMessage", channel=user, text=self._message, as_user=from_user.username)
+                print("Notifying @{}".format(user.name))
+                response = slack.api_call("chat.postMessage", channel=user.id, text=self._message,
+                                          as_user=from_user.username)
+                if not response['ok']:
+                    print(response)
+                    raise RuntimeError
             else:
-                print("Would have notified {}".format(user))
+                print("Would have notified @{}".format(user.name))
+
+
+def FetchUserIds(users):
+    user_ids = []
+    next = ''
+    while True:
+        response = slack.api_call("users.list", limit=250, cursor=next)
+        if not response['ok']:
+            if 'error' in response and 'ratelimited' in response['error']:
+                print("pausing...")
+                time.sleep(3)
+                continue
+            else:
+                print(response)
+                raise RuntimeError
+
+        if 'members' in response:
+            for member in response['members']:
+                id = member['id']
+                name = ''
+                real_name = ''
+                if 'name' in member:
+                    name = member['name']
+                if 'real_name' in member:
+                    real_name = member['real_name']
+
+                if name in users:
+                    user_ids.append(User(id, name))
+                    users.remove(name)
+                elif real_name in users:
+                    user_ids.append(User(id, real_name))
+                    users.remove(real_name)
+
+        if not users:
+            return user_ids, users
+
+        if not 'response_metadata' in response:
+            return user_ids, users
+        elif not 'next_cursor' in response['response_metadata']:
+            return user_ids, users
+        next = response['response_metadata']['next_cursor']
+        if not next:
+            return user_ids, users
 
 
 if __name__ == '__main__':
@@ -153,7 +211,14 @@ if __name__ == '__main__':
     options.store_args()
 
     from_user = OriginatingUser()
+    (user_ids, unidentified_users) = FetchUserIds(options.usernames)
 
     message = Message(message_file=options.parsed_args.message, url=options.parsed_args.url,
                       deadline=options.parsed_args.deadline, from_user=from_user)
-    message.send(from_user, options.usernames, dry=options.parsed_args.dry)
+    message.send(from_user, user_ids, dry=options.parsed_args.dry)
+
+    if unidentified_users:
+        print()
+        print("*** Unable to identify the following users ***")
+        for user in unidentified_users:
+            print("@{}".format(user))
