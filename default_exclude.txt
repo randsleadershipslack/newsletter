@@ -1,4 +1,10 @@
 announcements
+austin
+berlin
+nebraska
+pdx
+rtp_nc
+amsterdam
 boston
 canada
 colorado-connections
@@ -27,3 +33,6 @@ minnesota
 seattle
 sf-.*-meetup
 ruby
+.*meta.*
+.*politics
+vancouver
