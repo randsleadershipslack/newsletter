@@ -143,7 +143,11 @@ class Message:
         for user in users:
             if not dry:
                 print("Notifying {}".format(user))
-                slack.api_call("chat.postMessage", channel=user, text=self._message, as_user=from_user.username)
+                response = slack.api_call("chat.postMessage", channel=user, text=self._message,
+                                          as_user=from_user.username)
+                if not response['ok']:
+                    print(response)
+                    raise RuntimeError
             else:
                 print("Would have notified {}".format(user))
 
