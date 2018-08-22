@@ -189,11 +189,17 @@ class Channel:
                 more = response['has_more']
                 message_list = response['messages']
                 for message in message_list:
-                    if Channel._has_enough_reactions(message, required_reactions):
-                        self._remember_message(message)
-                        Channel._remember_user(message, users)
-                    self._accumulate_thread(message)
-                    end_at = message["ts"]
+                    if 'subtype' in message and message['subtype'] == "bot_message":
+                        continue
+                    try:
+                        if Channel._has_enough_reactions(message, required_reactions):
+                            self._remember_message(message)
+                            Channel._remember_user(message, users)
+                        self._accumulate_thread(message)
+                        end_at = message["ts"]
+                    except:
+                        print(message)
+                        raise
             else:
                 print(response['headers'])
                 raise RuntimeError
