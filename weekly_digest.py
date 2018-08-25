@@ -327,10 +327,6 @@ class Channel:
             user = User(message.user_id)
             users[user.id] = user
 
-    def annotate_messages(self, messages, users):
-        for message in messages:
-            message.annotate(users)
-
     def filter_messages(self, required_reactions):
         filtered = []
         for root, message in self.all_messages.items():
@@ -360,6 +356,11 @@ def get_channels(options):
             if not options.filter_channel(name):
                 channels.append(Channel(channel_id=channel_id, name=name))
     return channels
+
+
+def annotate_messages(messages, users):
+    for message in messages:
+        message.annotate(users)
 
 
 class Writer:
@@ -448,8 +449,8 @@ if __name__ == '__main__':
         for (user_id, user) in users.items():
             user.fetch_name()
 
-        channel.annotate_messages(messages, users)
-        channel.annotate_messages(threads, users)
+        annotate_messages(messages, users)
+        annotate_messages(threads, users)
 
         writer.write_channel(channel, messages, threads)
         total_messages += len(messages)
