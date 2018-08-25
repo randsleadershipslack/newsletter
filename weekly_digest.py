@@ -134,7 +134,7 @@ class Options(argparse.ArgumentParser):
         return True
 
 
-class Message:
+class MessageInfo:
     """
     Tracks information about a particular message
     """
@@ -216,11 +216,12 @@ class Channel:
 
     @staticmethod
     def _has_enough_reactions(message, required_reactions):
-        return Message.num_reactions(message) >= required_reactions
+        return MessageInfo.num_reactions(message) >= required_reactions
 
     def _remember_message(self, message):
-        self.messages.append(Message(channel_id=self.id, user_id=message['user'],
-                                     reactions=Message.num_reactions(message), text=message['text'], ts=message['ts']))
+        self.messages.append(MessageInfo(channel_id=self.id, user_id=message['user'],
+                                         reactions=MessageInfo.num_reactions(message), text=message['text'],
+                                         ts=message['ts']))
 
     def _accumulate_thread(self, message):
         root = message.get("thread_ts")
@@ -243,7 +244,7 @@ class Channel:
         filtered = {}
         for root, count in self.threads.items():
             if count >= required_responses:
-                message = Message(channel_id=self.id, user_id=None, reactions=None, text=None, ts=root)
+                message = MessageInfo(channel_id=self.id, user_id=None, reactions=None, text=None, ts=root)
                 filtered[message] = count
         self.threads = filtered
 
