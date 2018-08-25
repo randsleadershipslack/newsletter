@@ -52,7 +52,7 @@ class Options(argparse.ArgumentParser):
                           help="Only examine the channel(s) given in the file (regular expressions allowed)")
         self.add_argument("--reactions", type=int, default=3, metavar="THRESHOLD",
                           help="The number of reactions necessary for retaining in the digest (default: %(default)s)")
-        self.add_argument("--threads", type=int, default=10, metavar="THRESHOLD",
+        self.add_argument("--replies", type=int, default=10, metavar="THRESHOLD", dest='reply_threshold',
                           help="The number of replies necessary for retaining a thread in the digest (default: %(default)s)")
         self.add_argument("--exclude", nargs='+', metavar="CHANNEL",
                           help="Specifically exclude the given channel(s) (regular expressions allowed)")
@@ -420,7 +420,7 @@ if __name__ == '__main__':
     total_channels = 0
     for channel in channels:
         channel.fetch_messages(options.start_timestamp, options.end_timestamp, options.parsed_args.reactions, users)
-        channel.filter_threads(options.parsed_args.threads)
+        channel.filter_threads(options.parsed_args.reply_threshold)
 
         if not (channel.messages or channel.threaded_messages):
             continue

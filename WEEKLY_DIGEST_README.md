@@ -38,7 +38,7 @@ optional arguments:
   --reactions THRESHOLD
                         The number of reactions necessary for retaining in the
                         digest (default: 3)
-  --threads THRESHOLD   The number of replies necessary for retaining a thread
+  --replies THRESHOLD   The number of replies necessary for retaining a thread
                         in the digest (default: 10)
   --exclude CHANNEL [CHANNEL ...]
                         Specifically exclude the given channel(s) (regular
