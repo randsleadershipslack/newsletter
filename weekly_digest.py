@@ -214,16 +214,6 @@ class Message:
             self.url = response['permalink']
 
 
-class MessageInfo:
-    """
-    Tracks information about a particular message
-    """
-
-    def __init__(self, channel_id, message):
-        self.channel_id = channel_id
-        self.message = message
-
-
 class Channel:
     """
     Tracks and aggregates information specific to a channel.
@@ -282,31 +272,29 @@ class Channel:
             users[user.id] = user
 
     def annotate_messages(self, messages, users):
-        for info in messages:
-            info.message.annotate_user(users[info.message.user_id])
-            info.message.annotate_link()
+        for message in messages:
+            message.annotate_user(users[message.user_id])
+            message.annotate_link()
 
     def filter_messages(self, required_reactions):
         filtered = []
         for root, message in self.all_messages.items():
             if message.reaction_count >= required_reactions:
-                info = MessageInfo(channel_id=self.id, message=message)
-                filtered.append(info)
-        filtered.sort(key=lambda info : info.message.reaction_count)
+                filtered.append(message)
+        filtered.sort(key=lambda message : message.reaction_count)
         return list(reversed(filtered))
 
     def filter_threads(self, required_responses):
         filtered = {}
         for root, message in self.all_messages.items():
             if len(message.replies) >= required_responses:
-                info = MessageInfo(channel_id=self.id, message=message)
-                filtered[message.timestamp] = info
-        threads = sorted(filtered.values(), key=lambda info : len(info.message.replies))
+                filtered[message.timestamp] = message
+        threads = sorted(filtered.values(), key=lambda message : len(message.replies))
         return list(reversed(threads))
 
     def annotate_threads(self, threads):
-        for info in threads:
-            info.message.annotate_link()
+        for message in threads:
+            message.annotate_link()
 
 
 class User:
@@ -370,17 +358,17 @@ class Writer:
         box = "{0}".format("=" * len(name))
         return "{0}\n{1}\n{0}\n\n".format(box, name)
 
-    def _formatted_message(self, info):
+    def _formatted_message(self, message):
         separator = "-" * 80
         return "{0}\n{1}\n@{2} wrote on {3}\n{5} reactions\n{0}\n{4}\n".format(
-            separator, info.message.url, info.message.user_showname, info.message.time, self.wrapper.fill(info.message.text),
-            info.message.reaction_count)
+            separator, message.url, message.user_showname, message.time, self.wrapper.fill(message.text),
+            message.reaction_count)
 
-    def _formatted_thread_message(self, message_info):
+    def _formatted_thread_message(self, message):
         separator = "-" * 80
         return "{0}\n{1}\n@{2} wrote on {3}\n{5} replies\n{0}\n{4}\n".format(
-            separator, message_info.message.url, message_info.message.user_showname, message_info.message.time,
-            self.wrapper.fill(message_info.message.text), len(message_info.message.replies))
+            separator, message.url, message.user_showname, message.time, self.wrapper.fill(message.text),
+            len(message.replies))
 
     def write_channel(self, channel, messages, threads):
         with open(self._filename(channel), 'w') as f:
