@@ -219,10 +219,11 @@ class Message:
         return str(self._json)
 
     def annotate(self, users):
-        self._annotate_user(users[self.user_id])
+        self._annotate_user(users)
         self._annotate_link()
 
-    def _annotate_user(self, user):
+    def _annotate_user(self, users):
+        user = users.get(self.user_id, User(self.user_id))
         if user:
             self.user_showname = user.name
 
@@ -271,7 +272,7 @@ class Channel:
     def reset(self):
         self.all_messages = {}
 
-    def fetch_messages(self, start, end, users):
+    def fetch_messages(self, start, end):
         more = True
         start_from = start.timestamp()
         end_at = end.timestamp()
@@ -285,7 +286,6 @@ class Channel:
                     self.all_messages[message.timestamp] = message
                     if message.from_bot:
                         continue
-                    Channel._remember_user(message, users)
                     if message.thread_root:
                         replies.append(message)
                     end_at = message.timestamp
@@ -316,13 +316,6 @@ class Channel:
             return self._extract_messages(response)[0]
         print(response['headers'])
         raise RuntimeError
-
-    @staticmethod
-    def _remember_user(message, users):
-        user = users.get(message.user_id, None)
-        if not user:
-            user = User(message.user_id)
-            users[user.id] = user
 
 
 def get_channels(options):
@@ -424,18 +417,18 @@ if __name__ == '__main__':
 
     print("Looking for messages from {0} to {1}".format(options.start_date.isoformat(), options.end_date.isoformat()))
 
-    users = {}
     channels = get_channels(options)
     print("Found {0} channels".format(len(channels)))
     if not channels:
         sys.exit()
 
     writer = Writer()
+    users = {}
     total_messages = 0
     total_threads = 0
     total_channels = 0
     for channel in channels:
-        channel.fetch_messages(options.start_timestamp, options.end_timestamp, users)
+        channel.fetch_messages(options.start_timestamp, options.end_timestamp)
         all_messages = channel.all_messages.values()
         messages = filter_messages(all_messages=all_messages, required_reactions=options.parsed_args.reactions)
         threads = filter_threads(all_messages=all_messages, required_responses=options.parsed_args.reply_threshold,
