@@ -40,6 +40,10 @@ optional arguments:
                         digest (default: 3)
   --replies THRESHOLD   The number of replies necessary for retaining a thread
                         in the digest (default: 10)
+  --thread-reactions THRESHOLD
+                        The number of in-thread reactions necessary for
+                        retaining a thread in the digest (default: twice the
+                        reactions threshold)
   --exclude CHANNEL [CHANNEL ...]
                         Specifically exclude the given channel(s) (regular
                         expressions allowed)

@@ -53,7 +53,11 @@ class Options(argparse.ArgumentParser):
         self.add_argument("--reactions", type=int, default=3, metavar="THRESHOLD",
                           help="The number of reactions necessary for retaining in the digest (default: %(default)s)")
         self.add_argument("--replies", type=int, default=10, metavar="THRESHOLD", dest='reply_threshold',
-                          help="The number of replies necessary for retaining a thread in the digest (default: %(default)s)")
+                          help="The number of replies necessary for retaining a thread in the digest " +
+                               "(default: %(default)s)")
+        self.add_argument("--thread-reactions", type=int, metavar="THRESHOLD", dest='thread_reply_threshold',
+                          help="The number of in-thread reactions necessary for retaining a thread in the digest " +
+                               "(default: twice the reactions threshold)")
         self.add_argument("--exclude", nargs='+', metavar="CHANNEL",
                           help="Specifically exclude the given channel(s) (regular expressions allowed)")
         self.add_argument("--exclude-list", metavar="FILE",
@@ -63,6 +67,12 @@ class Options(argparse.ArgumentParser):
         self.parsed_args = self.parse_args()
         self._extract_dates()
         self._compile_lists()
+
+    @property
+    def thread_reactions(self):
+        if self.parsed_args.thread_reply_threshold:
+            return self.parsed_args.thread_reply_threshold
+        return self.parsed_args.reactions * 2
 
     @staticmethod
     def _find_week(week):
@@ -305,12 +315,12 @@ class Channel:
         filtered.sort(key=lambda message : message.reaction_count)
         return list(reversed(filtered))
 
-    def filter_threads(self, required_responses):
+    def filter_threads(self, required_responses, thread_reactions):
         filtered = {}
         for root, message in self.all_messages.items():
             if len(message.replies) >= required_responses:
                 filtered[message.timestamp] = message
-            elif message.threaded_reaction_count >= required_responses * 2:
+            elif message.threaded_reaction_count >= thread_reactions:
                 filtered[message.timestamp] = message
         threads = sorted(filtered.values(), key=lambda message : len(message.replies))
         return list(reversed(threads))
@@ -427,7 +437,8 @@ if __name__ == '__main__':
     for channel in channels:
         channel.fetch_messages(options.start_timestamp, options.end_timestamp, options.parsed_args.reactions, users)
         messages = channel.filter_messages(options.parsed_args.reactions)
-        threads = channel.filter_threads(options.parsed_args.reply_threshold)
+        threads = channel.filter_threads(required_responses=options.parsed_args.reply_threshold,
+                                         thread_reactions=options.thread_reactions)
 
         if not (messages or threads):
             continue
