@@ -305,10 +305,10 @@ class Channel:
             if len(message.replies) >= required_responses:
                 info = MessageInfo(channel_id=self.id, message=message)
                 filtered[message.timestamp] = info
-        return filtered
+        return filtered.values()
 
     def annotate_threads(self, threads):
-        for message in threads.values():
+        for message in threads:
             message.annotate_link()
 
 
@@ -395,7 +395,7 @@ class Writer:
             f.write("\n")
             f.write("Threaded messages: {}".format(len(threads)))
             f.write("\n")
-            for message in threads.values():
+            for message in threads:
                 f.write(self._formatted_thread_message(message))
                 f.write("\n")
 
