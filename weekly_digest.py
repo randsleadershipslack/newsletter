@@ -187,11 +187,11 @@ class MessageInfo:
             self.url = response['permalink']
 
     @staticmethod
-    def num_reactions(message):
-        if 'reactions' not in message:
+    def num_reactions(msg):
+        if 'reactions' not in msg.json:
             return 0
         reaction_count = 0
-        for reaction in message['reactions']:
+        for reaction in msg.json['reactions']:
             reaction_count += int(reaction['count'])
         return reaction_count
 
@@ -240,11 +240,11 @@ class Channel:
 
     @staticmethod
     def _has_enough_reactions(msg, required_reactions):
-        return MessageInfo.num_reactions(msg.json) >= required_reactions
+        return MessageInfo.num_reactions(msg) >= required_reactions
 
     def _remember_message(self, msg):
         self.messages.append(MessageInfo(channel_id=self.id, user_id=msg.json['user'],
-                                         reactions=MessageInfo.num_reactions(msg.json), text=msg.json['text'],
+                                         reactions=MessageInfo.num_reactions(msg), text=msg.json['text'],
                                          ts=msg.timestamp))
 
     def _accumulate_thread(self, msg):
