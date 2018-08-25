@@ -349,7 +349,7 @@ def filter_threads(all_messages, required_responses, thread_reactions):
             filtered[message.timestamp] = message
         elif message.threaded_reaction_count >= thread_reactions:
             filtered[message.timestamp] = message
-    threads = sorted(filtered.values(), key=lambda message : len(message.replies))
+    threads = sorted(filtered.values(), key=lambda message : message.threaded_reaction_count)
     return list(reversed(threads))
 
 
