@@ -415,8 +415,8 @@ class Writer:
     Writes the message information to file
     """
 
-    def __init__(self, options):
-        self.options = options
+    def __init__(self, filter):
+        self._filter = filter
         self.total_messages = 0
         self.filtered_messages = 0
         self.total_threads = 0
@@ -443,12 +443,12 @@ class Writer:
     def _filename(self, channel):
         return self.folder_name + "/" + channel.name + ".txt"
 
-    def add_channel(self, channel, filter):
+    def add_channel(self, channel):
         all_messages = channel.all_messages.values()
         self.total_messages += len(all_messages)
 
-        messages = filter.filter_messages(all_messages)
-        threads = filter.filter_threads(all_messages)
+        messages = self._filter.filter_messages(all_messages)
+        threads = self._filter.filter_threads(all_messages)
         if not (messages or threads):
             return
 
@@ -490,10 +490,10 @@ if __name__ == '__main__':
     if not channels:
         sys.exit()
 
-    writer = Writer(options)
+    writer = Writer(filter)
     for channel in channels:
         channel.fetch_messages(options.start_timestamp, options.end_timestamp)
-        writer.add_channel(channel, filter)
+        writer.add_channel(channel)
         channel.reset()
 
     if len(channels) > 1:
