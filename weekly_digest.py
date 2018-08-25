@@ -153,6 +153,14 @@ class Message:
         return False
 
     @property
+    def user_id(self):
+        return self.json['user']
+
+    @property
+    def text(self):
+        return self.json['text']
+
+    @property
     def __repr__(self):
         return self.json
 
@@ -243,8 +251,8 @@ class Channel:
         return msg.reaction_count >= required_reactions
 
     def _remember_message(self, msg):
-        self.messages.append(MessageInfo(channel_id=self.id, user_id=msg.json['user'],
-                                         reactions=msg.reaction_count, text=msg.json['text'],
+        self.messages.append(MessageInfo(channel_id=self.id, user_id=msg.user_id,
+                                         reactions=msg.reaction_count, text=msg.text,
                                          ts=msg.timestamp))
 
     def _accumulate_thread(self, msg):
@@ -254,9 +262,9 @@ class Channel:
 
     @staticmethod
     def _remember_user(msg, users):
-        user = users.get(msg.json['user'], None)
+        user = users.get(msg.user_id, None)
         if not user:
-            user = User(msg.json['user'])
+            user = User(msg.user_id)
             users[user.id] = user
 
     def annotate_messages(self, users):
