@@ -235,12 +235,10 @@ class Channel:
         self.id = channel_id
         self.name = name
         self.messages = []
-        self.threaded_messages = {}
         self.all_messages = {}
 
     def reset(self):
         self.messages = []
-        self.threaded_messages = {}
         self.all_messages = {}
 
     def fetch_messages(self, start, end, required_reactions, users):
@@ -307,10 +305,10 @@ class Channel:
             if len(message.replies) >= required_responses:
                 info = MessageInfo(channel_id=self.id, message=message)
                 filtered[message.timestamp] = info
-        self.threaded_messages = filtered
+        return filtered
 
-    def annotate_threads(self):
-        for message in self.threaded_messages.values():
+    def annotate_threads(self, threads):
+        for message in threads.values():
             message.annotate_link()
 
 
@@ -387,7 +385,7 @@ class Writer:
             separator, message_info.url, message_info.user_showname, message_info.time,
             self.wrapper.fill(message_info.text), len(message_info.message.replies))
 
-    def write_channel(self, channel):
+    def write_channel(self, channel, threads):
         with open(self._filename(channel), 'w') as f:
             f.write(Writer._formatted_header(channel))
             for message in channel.messages:
@@ -395,9 +393,9 @@ class Writer:
                 f.write("\n")
 
             f.write("\n")
-            f.write("Threaded messages: {}".format(len(channel.threaded_messages)))
+            f.write("Threaded messages: {}".format(len(threads)))
             f.write("\n")
-            for message in channel.threaded_messages.values():
+            for message in threads.values():
                 f.write(self._formatted_thread_message(message))
                 f.write("\n")
 
@@ -420,9 +418,9 @@ if __name__ == '__main__':
     total_channels = 0
     for channel in channels:
         channel.fetch_messages(options.start_timestamp, options.end_timestamp, options.parsed_args.reactions, users)
-        channel.filter_threads(options.parsed_args.reply_threshold)
+        threads = channel.filter_threads(options.parsed_args.reply_threshold)
 
-        if not (channel.messages or channel.threaded_messages):
+        if not (channel.messages or threads):
             continue
 
         for (user_id, user) in users.items():
@@ -430,15 +428,15 @@ if __name__ == '__main__':
 
         channel.messages.reverse()
         channel.annotate_messages(users)
-        channel.annotate_threads()
+        channel.annotate_threads(threads)
 
-        writer.write_channel(channel)
+        writer.write_channel(channel, threads)
         total_messages += len(channel.messages)
-        total_threads += len(channel.threaded_messages)
+        total_threads += len(threads)
         total_channels += 1
         print("\t{0}: {1} potential messages, {2} long threads from {3} total messages".format(channel.name,
                                                                                                len(channel.messages),
-                                                                                               len(channel.threaded_messages),
+                                                                                               len(threads),
                                                                                                len(channel.all_messages)))
 
     if len(channels) > 1:
