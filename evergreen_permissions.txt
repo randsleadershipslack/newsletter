@@ -16,6 +16,7 @@
 @kevin.newman
 @kiger
 @louis
+@masonoise
 @mathiasfoster
 @matt.schellhas
 @miked
