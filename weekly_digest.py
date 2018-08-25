@@ -285,9 +285,9 @@ class Channel:
         self.messages.append(MessageInfo(channel_id=message.channel_id, message=message))
 
     def _accumulate_thread(self, message):
-        root = message.thread_root
-        if root:
-            self.threads[root] = self.threads.get(root, 0) + 1
+        self.threads[message.thread_root] = self.threads.get(message.thread_root, 0) + 1
+        default_root = Message(channel_id=message.channel_id, json="")
+        self.all_messages.get(message.thread_root, default_root).replies.append(message)
 
     @staticmethod
     def _remember_user(message, users):
