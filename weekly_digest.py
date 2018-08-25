@@ -323,10 +323,6 @@ class Channel:
         threads = sorted(filtered.values(), key=lambda message : len(message.replies))
         return list(reversed(threads))
 
-    def annotate_threads(self, threads):
-        for message in threads:
-            message.annotate_link()
-
 
 class User:
     """
@@ -445,7 +441,7 @@ if __name__ == '__main__':
             user.fetch_name()
 
         channel.annotate_messages(messages, users)
-        channel.annotate_threads(threads)
+        channel.annotate_messages(threads, users)
 
         writer.write_channel(channel, messages, threads)
         total_messages += len(messages)
