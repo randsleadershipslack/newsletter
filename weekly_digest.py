@@ -257,25 +257,26 @@ class Channel:
                                       latest=end_at, count=500)
             if response['ok']:
                 more = response['has_more']
-                message_list = response['messages']
-                for json_msg in message_list:
-                    try:
-                        message = Message(channel_id=self.id, json=json_msg)
-                        self.all_messages[message.timestamp] = message
-                        if message.from_bot:
-                            continue
-                        Channel._remember_user(message, users)
-                        if message.thread_root:
-                            replies.append(message)
-                        end_at = message.timestamp
-                    except:
-                        print(message)
-                        raise
+                for message in self._extract_messages(response):
+                    self.all_messages[message.timestamp] = message
+                    if message.from_bot:
+                        continue
+                    Channel._remember_user(message, users)
+                    if message.thread_root:
+                        replies.append(message)
+                    end_at = message.timestamp
             else:
                 print(response['headers'])
                 raise RuntimeError
         for message in replies:
             self._accumulate_thread(message)
+
+    def _extract_messages(self, response):
+        messages = []
+        message_list = response['messages']
+        for json_msg in message_list:
+            messages.append(Message(channel_id=self.id, json=json_msg))
+        return messages
 
     def _accumulate_thread(self, message):
         root = message.thread_root
@@ -288,10 +289,7 @@ class Channel:
             return self.all_messages[timestamp]
         response = slack.api_call("channels.history", channel=self.id, inclusive=True, latest=timestamp, count=1)
         if response['ok']:
-            message_list = response['messages']
-            for json_msg in message_list:
-               return Message(channel_id=self.id, json=json_msg)
-
+            return self._extract_messages(response)[0]
         print(response['headers'])
         raise RuntimeError
 
