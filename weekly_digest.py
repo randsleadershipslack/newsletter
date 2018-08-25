@@ -142,6 +142,10 @@ class Message:
     def __init__(self, json):
         self.json = json
 
+    @property
+    def timestamp(self):
+        return self.json["ts"]
+
     def from_bot(self):
         if 'subtype' in self.json and self.json['subtype'] == "bot_message":
             return True
@@ -221,7 +225,7 @@ class Channel:
                             self._remember_message(msg)
                             Channel._remember_user(msg, users)
                         self._accumulate_thread(msg)
-                        end_at = msg.json["ts"]
+                        end_at = msg.timestamp
                     except:
                         print(msg.json)
                         raise
@@ -236,11 +240,11 @@ class Channel:
     def _remember_message(self, msg):
         self.messages.append(MessageInfo(channel_id=self.id, user_id=msg.json['user'],
                                          reactions=MessageInfo.num_reactions(msg.json), text=msg.json['text'],
-                                         ts=msg.json['ts']))
+                                         ts=msg.timestamp))
 
     def _accumulate_thread(self, msg):
         root = msg.json.get("thread_ts")
-        if root and root != msg.json["ts"]:
+        if root and root != msg.timestamp:
             self.threads[root] = self.threads.get(root, 0) + 1
 
     @staticmethod
