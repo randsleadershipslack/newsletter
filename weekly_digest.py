@@ -238,42 +238,42 @@ class Channel:
             if response['ok']:
                 more = response['has_more']
                 message_list = response['messages']
-                for message in message_list:
-                    msg = Message(channel_id=self.id, json=message)
-                    if msg.from_bot:
+                for json_msg in message_list:
+                    message = Message(channel_id=self.id, json=json_msg)
+                    if message.from_bot:
                         continue
                     try:
-                        if Channel._has_enough_reactions(msg, required_reactions):
-                            self._remember_message(msg)
-                            Channel._remember_user(msg, users)
-                        self._accumulate_thread(msg)
-                        end_at = msg.timestamp
+                        if Channel._has_enough_reactions(message, required_reactions):
+                            self._remember_message(message)
+                            Channel._remember_user(message, users)
+                        self._accumulate_thread(message)
+                        end_at = message.timestamp
                     except:
-                        print(msg)
+                        print(message)
                         raise
             else:
                 print(response['headers'])
                 raise RuntimeError
 
     @staticmethod
-    def _has_enough_reactions(msg, required_reactions):
-        return msg.reaction_count >= required_reactions
+    def _has_enough_reactions(message, required_reactions):
+        return message.reaction_count >= required_reactions
 
-    def _remember_message(self, msg):
-        self.messages.append(MessageInfo(channel_id=msg.channel_id, user_id=msg.user_id,
-                                         reactions=msg.reaction_count, text=msg.text,
-                                         ts=msg.timestamp))
+    def _remember_message(self, message):
+        self.messages.append(MessageInfo(channel_id=message.channel_id, user_id=message.user_id,
+                                         reactions=message.reaction_count, text=message.text,
+                                         ts=message.timestamp))
 
-    def _accumulate_thread(self, msg):
-        root = msg.thread_root
+    def _accumulate_thread(self, message):
+        root = message.thread_root
         if root:
             self.threads[root] = self.threads.get(root, 0) + 1
 
     @staticmethod
-    def _remember_user(msg, users):
-        user = users.get(msg.user_id, None)
+    def _remember_user(message, users):
+        user = users.get(message.user_id, None)
         if not user:
-            user = User(msg.user_id)
+            user = User(message.user_id)
             users[user.id] = user
 
     def annotate_messages(self, users):
