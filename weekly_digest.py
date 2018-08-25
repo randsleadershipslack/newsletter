@@ -361,12 +361,13 @@ class MessageFormatter:
     def __init__(self, separator, wrapper):
         self._sep = separator
         self._wrapper = wrapper
+        self._template = "{sep}\n{url}\n@{name} wrote on {time}\n{react} reactions\n{sep}\n{text}\n"
         pass
 
     def format(self, message):
-        return "{0}\n{1}\n@{2} wrote on {3}\n{5} reactions\n{0}\n{4}\n".format(
-            self._sep, message.url, message.user_showname, message.time, self._wrapper.fill(message.text),
-            message.reaction_count)
+        return self._template.format(
+            url=message.url, name=message.user_showname, time=message.time, text=self._wrapper.fill(message.text),
+            react=message.reaction_count, sep=self._sep)
 
 
 class Writer:
