@@ -374,16 +374,31 @@ class MessageFormatter:
     A class to repeatedly format messages
     """
 
-    def __init__(self, separator, wrapper):
-        self._sep = separator
+    def __init__(self, wrapper, separator_char='-'):
+        self._sep = separator_char * 80
         self._wrapper = wrapper
         self._template = "{sep}\n{url}\n@{name} wrote on {time}\n{react} reactions\n{sep}\n{text}\n"
         pass
 
     def format(self, message):
-        return self._template.format(
-            url=message.url, name=message.user_showname, time=message.time, text=self._wrapper.fill(message.text),
-            react=message.reaction_count, sep=self._sep)
+        return self._template.format(sep=self._sep, url=message.url, name=message.user_showname, time=message.time,
+                                     text=self._wrapper.fill(message.text), react=message.reaction_count)
+
+
+class ThreadFormatter:
+    """
+    A class to repeatedly format thread starting messages
+    """
+
+    def __init__(self, wrapper, separator_char='-'):
+        self._sep = separator_char * 80
+        self._wrapper = wrapper
+        self._template = "{sep}\n{url}\n@{name} wrote on {time}\n{replies} replies\n{sep}\n{text}\n"
+        pass
+
+    def format(self, message):
+        return self._template.format( sep=self._sep, url=message.url, name=message.user_showname, time=message.time,
+                                      text=self._wrapper.fill(message.text), replies=len(message.replies))
 
 
 class Writer:
@@ -403,8 +418,8 @@ class Writer:
         self._wrapper = textwrap.TextWrapper(width=80, expand_tabs=False, replace_whitespace=False,
                                             drop_whitespace=False)
         self._channel_formatter = ChannelFormatter()
-        self._message_formatter = MessageFormatter(self._separator, self._wrapper)
-        pass
+        self._message_formatter = MessageFormatter(self._wrapper)
+        self._thread_formatter = ThreadFormatter(self._wrapper)
 
     @staticmethod
     def _create_folder():
@@ -419,11 +434,6 @@ class Writer:
 
     def _filename(self, channel):
         return self.folder_name + "/" + channel.name + ".txt"
-
-    def _formatted_thread_message(self, message):
-        return "{0}\n{1}\n@{2} wrote on {3}\n{5} replies\n{0}\n{4}\n".format(
-            self._separator, message.url, message.user_showname, message.time, self._wrapper.fill(message.text),
-            len(message.replies))
 
     def add_channel(self, channel):
         all_messages = channel.all_messages.values()
@@ -457,7 +467,7 @@ class Writer:
             f.write("Threaded messages: {}".format(len(threads)))
             f.write("\n")
             for message in threads:
-                f.write(self._formatted_thread_message(message))
+                f.write(self._thread_formatter.format(message))
                 f.write("\n")
 
 
