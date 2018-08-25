@@ -439,10 +439,9 @@ if __name__ == '__main__':
     total_channels = 0
     for channel in channels:
         channel.fetch_messages(options.start_timestamp, options.end_timestamp, options.parsed_args.reactions, users)
-        messages = filter_messages(all_messages=channel.all_messages.values(),
-                                   required_reactions=options.parsed_args.reactions)
-        threads = filter_threads(all_messages=channel.all_messages.values(),
-                                 required_responses=options.parsed_args.reply_threshold,
+        all_messages = channel.all_messages.values()
+        messages = filter_messages(all_messages=all_messages, required_reactions=options.parsed_args.reactions)
+        threads = filter_threads(all_messages=all_messages, required_responses=options.parsed_args.reply_threshold,
                                  thread_reactions=options.thread_reactions)
 
         if not (messages or threads):
