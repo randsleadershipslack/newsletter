@@ -235,6 +235,24 @@ class Message:
             self.url = response['permalink']
 
 
+class User:
+    """
+    Tracks and aggregates information specific to a user.
+    """
+
+    def __init__(self, user_id):
+        self.id = user_id
+        self.real_name = ""
+        self.display_name = ""
+
+    def fetch_name(self):
+        if not self.real_name and not self.display_name:
+            response = slack.api_call("users.info", user=self.id)
+            if response['ok']:
+                self.real_name = response['user']['profile']['real_name']
+                self.display_name = response['user']['profile']['display_name']
+
+
 class Channel:
     """
     Tracks and aggregates information specific to a channel.
@@ -325,24 +343,6 @@ class Channel:
                 filtered[message.timestamp] = message
         threads = sorted(filtered.values(), key=lambda message : len(message.replies))
         return list(reversed(threads))
-
-
-class User:
-    """
-    Tracks and aggregates information specific to a user.
-    """
-
-    def __init__(self, user_id):
-        self.id = user_id
-        self.real_name = ""
-        self.display_name = ""
-
-    def fetch_name(self):
-        if not self.real_name and not self.display_name:
-            response = slack.api_call("users.info", user=self.id)
-            if response['ok']:
-                self.real_name = response['user']['profile']['real_name']
-                self.display_name = response['user']['profile']['display_name']
 
 
 def get_channels(options):
