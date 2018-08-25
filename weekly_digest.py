@@ -305,7 +305,8 @@ class Channel:
             if len(message.replies) >= required_responses:
                 info = MessageInfo(channel_id=self.id, message=message)
                 filtered[message.timestamp] = info
-        return filtered.values()
+        threads = sorted(filtered.values(), key=lambda message : len(message.message.replies))
+        return list(reversed(threads))
 
     def annotate_threads(self, threads):
         for message in threads:
