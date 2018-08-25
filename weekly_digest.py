@@ -143,6 +143,8 @@ class Message:
         self.channel_id = channel_id
         self._json = json
         self.replies = []
+        self.user_showname = ""
+        self.url = ""
 
     @property
     def timestamp(self):
@@ -188,6 +190,18 @@ class Message:
     def __str__(self):
         return str(self._json)
 
+    def annotate_user(self, user):
+        if user:
+            if user.display_name:
+                self.user_showname = user.display_name
+            else:
+                self.user_showname = user.real_name
+
+    def annotate_link(self):
+        response = slack.api_call("chat.getPermalink", channel=self.channel_id, message_ts=self.timestamp)
+        if response['ok']:
+            self.url = response['permalink']
+
 
 class MessageInfo:
     """
@@ -212,18 +226,6 @@ class MessageInfo:
         self.time = time.isoformat(sep=" ")
         self.user_showname = ""
         self.url = ""
-
-    def annotate_user(self, user):
-        if user:
-            if user.display_name:
-                self.user_showname = user.display_name
-            else:
-                self.user_showname = user.real_name
-
-    def annotate_link(self):
-        response = slack.api_call("chat.getPermalink", channel=self.channel_id, message_ts=self.ts)
-        if response['ok']:
-            self.url = response['permalink']
 
 
 class Channel:
@@ -284,9 +286,9 @@ class Channel:
             users[user.id] = user
 
     def annotate_messages(self, messages, users):
-        for message in messages:
-            message.annotate_user(users[message.user])
-            message.annotate_link()
+        for info in messages:
+            info.message.annotate_user(users[info.message.user_id])
+            info.message.annotate_link()
 
     def filter_messages(self, required_reactions):
         filtered = []
@@ -307,8 +309,8 @@ class Channel:
         return list(reversed(threads))
 
     def annotate_threads(self, threads):
-        for message in threads:
-            message.annotate_link()
+        for info in threads:
+            info.message.annotate_link()
 
 
 class User:
