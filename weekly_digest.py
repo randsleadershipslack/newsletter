@@ -147,7 +147,7 @@ class Message:
         self.channel_id = channel_id
         self._json = json
         self.replies = []
-        self.user_showname = ""
+        self.username = ""
         self.url = ""
         self._reaction_count = None
         self._time = None
@@ -219,7 +219,7 @@ class Message:
     def _annotate_user(self, users):
         user = users.get(self.user_id, User(self.user_id))
         if user:
-            self.user_showname = user.name
+            self.username = user.name
 
     def _annotate_link(self):
         response = slack.api_call("chat.getPermalink", channel=self.channel_id, message_ts=self.timestamp)
@@ -375,7 +375,7 @@ class MessageFormatter:
         pass
 
     def format(self, message):
-        return self._template.format(sep=self._sep, url=message.url, name=message.user_showname, time=message.time,
+        return self._template.format(sep=self._sep, url=message.url, name=message.username, time=message.time,
                                      text=self._wrapper.fill(message.text), react=message.reaction_count)
 
 
@@ -392,7 +392,7 @@ class ThreadFormatter:
         pass
 
     def format(self, message):
-        return self._template.format( sep=self._sep, url=message.url, name=message.user_showname, time=message.time,
+        return self._template.format( sep=self._sep, url=message.url, name=message.username, time=message.time,
                                       text=self._wrapper.fill(message.text), replies=len(message.replies),
                                       react=message.threaded_reaction_count)
 
