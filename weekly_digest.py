@@ -219,17 +219,17 @@ class Message:
         return str(self._json)
 
     def annotate(self, users):
-        self.annotate_user(users[self.user_id])
-        self.annotate_link()
+        self._annotate_user(users[self.user_id])
+        self._annotate_link()
 
-    def annotate_user(self, user):
+    def _annotate_user(self, user):
         if user:
             if user.display_name:
                 self.user_showname = user.display_name
             else:
                 self.user_showname = user.real_name
 
-    def annotate_link(self):
+    def _annotate_link(self):
         response = slack.api_call("chat.getPermalink", channel=self.channel_id, message_ts=self.timestamp)
         if response['ok']:
             self.url = response['permalink']
