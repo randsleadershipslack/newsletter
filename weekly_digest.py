@@ -134,6 +134,15 @@ class Options(argparse.ArgumentParser):
         return True
 
 
+class Message:
+    """
+    Deals with interpreting message information
+    """
+
+    def __init__(self, json):
+        self.json = json
+
+
 class MessageInfo:
     """
     Tracks information about a particular message
@@ -199,16 +208,17 @@ class Channel:
                 more = response['has_more']
                 message_list = response['messages']
                 for message in message_list:
-                    if 'subtype' in message and message['subtype'] == "bot_message":
+                    msg = Message(message)
+                    if 'subtype' in msg.json and msg.json['subtype'] == "bot_message":
                         continue
                     try:
-                        if Channel._has_enough_reactions(message, required_reactions):
-                            self._remember_message(message)
-                            Channel._remember_user(message, users)
-                        self._accumulate_thread(message)
-                        end_at = message["ts"]
+                        if Channel._has_enough_reactions(msg.json, required_reactions):
+                            self._remember_message(msg.json)
+                            Channel._remember_user(msg.json, users)
+                        self._accumulate_thread(msg.json)
+                        end_at = msg.json["ts"]
                     except:
-                        print(message)
+                        print(msg.json)
                         raise
             else:
                 print(response['headers'])
