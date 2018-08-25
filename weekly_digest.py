@@ -453,6 +453,7 @@ if __name__ == '__main__':
     for channel in channels:
         channel.fetch_messages(options.start_timestamp, options.end_timestamp)
         writer.add_channel(channel)
+        channel.reset()
 
     if len(channels) > 1:
         print("\nFound {0} potential messages and {1} long threads across {2} channels and {3} messages".format(
