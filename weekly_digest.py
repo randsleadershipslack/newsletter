@@ -235,12 +235,12 @@ class Channel:
         self.id = channel_id
         self.name = name
         self.messages = []
-        self.threads = {}
+        self.threaded_messages = {}
         self.all_messages = {}
 
     def reset(self):
         self.messages = []
-        self.threads = {}
+        self.threaded_messages = {}
         self.all_messages = {}
 
     def fetch_messages(self, start, end, required_reactions, users):
@@ -250,7 +250,7 @@ class Channel:
         more = True
         start_from = start.timestamp()
         end_at = end.timestamp()
-        threaded_messages = []
+        replies = []
         while more:
             response = slack.api_call("channels.history", channel=self.id, inclusive=False, oldest=start_from,
                                       latest=end_at, count=500)
@@ -267,7 +267,7 @@ class Channel:
                             self._remember_message(message)
                             Channel._remember_user(message, users)
                         if message.thread_root:
-                            threaded_messages.append(message)
+                            replies.append(message)
                         end_at = message.timestamp
                     except:
                         print(message)
@@ -275,7 +275,7 @@ class Channel:
             else:
                 print(response['headers'])
                 raise RuntimeError
-        for message in threaded_messages:
+        for message in replies:
             self._accumulate_thread(message)
 
     @staticmethod
@@ -286,7 +286,6 @@ class Channel:
         self.messages.append(MessageInfo(channel_id=message.channel_id, message=message))
 
     def _accumulate_thread(self, message):
-        self.threads[message.thread_root] = self.threads.get(message.thread_root, 0) + 1
         default_root = Message(channel_id=message.channel_id, json="")
         self.all_messages.get(message.thread_root, default_root).replies.append(message)
 
@@ -304,13 +303,6 @@ class Channel:
 
     def filter_threads(self, required_responses):
         filtered = {}
-        for root, count in self.threads.items():
-            if count >= required_responses:
-                message = MessageInfo(channel_id=self.id, ts=root)
-                filtered[message] = count
-        self.threads = filtered
-
-        filtered = {}
         for root, message in self.all_messages.items():
             if len(message.replies) >= required_responses:
                 info = MessageInfo(channel_id=self.id, message=message)
@@ -318,8 +310,6 @@ class Channel:
         self.threaded_messages = filtered
 
     def annotate_threads(self):
-        for root in self.threads.keys():
-            root.annotate_link()
         for message in self.threaded_messages.values():
             message.annotate_link()
 
@@ -405,7 +395,7 @@ class Writer:
                 f.write("\n")
 
             f.write("\n")
-            f.write("Threaded messages: {}".format(len(channel.threads)))
+            f.write("Threaded messages: {}".format(len(channel.threaded_messages)))
             f.write("\n")
             for message in channel.threaded_messages.values():
                 f.write(self._formatted_thread_message(message))
@@ -432,7 +422,7 @@ if __name__ == '__main__':
         channel.fetch_messages(options.start_timestamp, options.end_timestamp, options.parsed_args.reactions, users)
         channel.filter_threads(options.parsed_args.threads)
 
-        if not (channel.messages or channel.threads):
+        if not (channel.messages or channel.threaded_messages):
             continue
 
         for (user_id, user) in users.items():
@@ -444,11 +434,11 @@ if __name__ == '__main__':
 
         writer.write_channel(channel)
         total_messages += len(channel.messages)
-        total_threads += len(channel.threads)
+        total_threads += len(channel.threaded_messages)
         total_channels += 1
         print("\t{0}: {1} potential messages, {2} long threads from {3} total messages".format(channel.name,
                                                                                                len(channel.messages),
-                                                                                               len(channel.threads),
+                                                                                               len(channel.threaded_messages),
                                                                                                len(channel.all_messages)))
 
     if len(channels) > 1:
