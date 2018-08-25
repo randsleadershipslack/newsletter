@@ -168,11 +168,6 @@ class Message:
             return root
         return None
 
-
-    @property
-    def __repr__(self):
-        return self.json
-
     @property
     def reaction_count(self):
         if 'reactions' not in self.json:
@@ -182,19 +177,31 @@ class Message:
             reaction_count += int(reaction['count'])
         return reaction_count
 
+    def __repr__(self):
+        return repr(self.json)
+
+    def __str__(self):
+        return str(self.json)
+
 
 class MessageInfo:
     """
     Tracks information about a particular message
     """
 
-    def __init__(self, channel_id, user_id, reactions, text, ts):
+    def __init__(self, channel_id, ts=None, message=None):
         self.channel_id = channel_id
-        self.user = user_id
-        self.reactions = reactions
-        self.text = text
+        if not (ts or message):
+            raise RuntimeError("Must provide either a timestamp or a message")
         self.ts = ts
-        time = datetime.datetime.fromtimestamp(float(ts))
+        if message:
+            self.channel_id = message.channel_id
+            self.user = message.user_id
+            self.reactions = message.reaction_count
+            self.text = message.text
+            self.ts = message.timestamp
+
+        time = datetime.datetime.fromtimestamp(float(self.ts))
         time = time.replace(second=0, microsecond=0)
         self.time = time.isoformat(sep=" ")
         self.user_showname = ""
@@ -260,9 +267,7 @@ class Channel:
         return message.reaction_count >= required_reactions
 
     def _remember_message(self, message):
-        self.messages.append(MessageInfo(channel_id=message.channel_id, user_id=message.user_id,
-                                         reactions=message.reaction_count, text=message.text,
-                                         ts=message.timestamp))
+        self.messages.append(MessageInfo(channel_id=message.channel_id, message=message))
 
     def _accumulate_thread(self, message):
         root = message.thread_root
@@ -285,7 +290,7 @@ class Channel:
         filtered = {}
         for root, count in self.threads.items():
             if count >= required_responses:
-                message = MessageInfo(channel_id=self.id, user_id=None, reactions=None, text=None, ts=root)
+                message = MessageInfo(channel_id=self.id, ts=root)
                 filtered[message] = count
         self.threads = filtered
 
