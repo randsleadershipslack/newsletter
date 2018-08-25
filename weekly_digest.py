@@ -446,9 +446,6 @@ if __name__ == '__main__':
         if not (messages or threads):
             continue
 
-        for (user_id, user) in users.items():
-            user.fetch_name()
-
         annotate_messages(messages, users)
         annotate_messages(threads, users)
 
