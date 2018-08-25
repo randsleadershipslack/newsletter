@@ -316,16 +316,30 @@ def annotate_messages(messages, users):
     for message in messages:
         message.annotate(users)
 
-def get_channels(options):
+def get_channels():
     response = slack.api_call("channels.list", exclude_archived=1, exclude_members=1)
     channels = []
     if response["ok"]:
         for channel in response["channels"]:
             name = channel['name']
             channel_id = channel['id']
-            if not options.filter_channel(name):
-                channels.append(Channel(channel_id=channel_id, name=name))
+            channels.append(Channel(channel_id=channel_id, name=name))
     return channels
+
+class Filter:
+    """
+    A class to manage filtering things out as necessary
+    """
+
+    def __init__(self):
+        pass
+
+    def filter_channels(self, channels, options):
+        filtered = []
+        for channel in channels:
+            if not options.filter_channel(channel.name):
+                filtered.append(channel)
+        return filtered
 
 def filter_messages(all_messages, required_reactions):
     filtered = []
@@ -471,7 +485,8 @@ if __name__ == '__main__':
 
     print("Looking for messages from {0} to {1}".format(options.start_date.isoformat(), options.end_date.isoformat()))
 
-    channels = get_channels(options)
+    filter = Filter()
+    channels = filter.filter_channels(get_channels(), options)
     print("Found {0} channels".format(len(channels)))
     if not channels:
         sys.exit()
