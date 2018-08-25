@@ -141,26 +141,26 @@ class Message:
 
     def __init__(self, channel_id, json):
         self.channel_id = channel_id
-        self.json = json
+        self._json = json
         self.replies = []
 
     @property
     def timestamp(self):
-        return self.json["ts"]
+        return self._json["ts"]
 
     @property
     def from_bot(self):
-        if 'subtype' in self.json and self.json['subtype'] == "bot_message":
+        if 'subtype' in self._json and self._json['subtype'] == "bot_message":
             return True
         return False
 
     @property
     def user_id(self):
-        return self.json['user']
+        return self._json['user']
 
     @property
     def text(self):
-        return self.json['text']
+        return self._json['text']
 
     @property
     def is_thread(self):
@@ -168,25 +168,25 @@ class Message:
 
     @property
     def thread_root(self):
-        root = self.json.get("thread_ts")
+        root = self._json.get("thread_ts")
         if root and root != self.timestamp:
             return root
         return None
 
     @property
     def reaction_count(self):
-        if 'reactions' not in self.json:
+        if 'reactions' not in self._json:
             return 0
         reaction_count = 0
-        for reaction in self.json['reactions']:
+        for reaction in self._json['reactions']:
             reaction_count += int(reaction['count'])
         return reaction_count
 
     def __repr__(self):
-        return repr(self.json)
+        return repr(self._json)
 
     def __str__(self):
-        return str(self.json)
+        return str(self._json)
 
 
 class MessageInfo:
