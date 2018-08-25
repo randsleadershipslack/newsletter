@@ -353,6 +353,22 @@ def filter_threads(all_messages, required_responses, thread_reactions):
     return list(reversed(threads))
 
 
+class ChannelFormatter:
+    """
+    A class to repeatedly format channels
+    """
+
+    def __init__(self, separator_char='='):
+        self._sep = separator_char
+        self._template = "{box}\n{name}\n{box}\n\n"
+        pass
+
+    def format(self, channel):
+        name = self._sep * 2 + ' ' * 2 + channel.name + ' ' * 2 + self._sep * 2
+        box = self._sep * len(name)
+        return self._template.format(box=box, name=name)
+
+
 class MessageFormatter:
     """
     A class to repeatedly format messages
@@ -386,6 +402,7 @@ class Writer:
         self._separator = "-" * 80
         self._wrapper = textwrap.TextWrapper(width=80, expand_tabs=False, replace_whitespace=False,
                                             drop_whitespace=False)
+        self._channel_formatter = ChannelFormatter()
         self._message_formatter = MessageFormatter(self._separator, self._wrapper)
         pass
 
@@ -402,12 +419,6 @@ class Writer:
 
     def _filename(self, channel):
         return self.folder_name + "/" + channel.name + ".txt"
-
-    @staticmethod
-    def _formatted_header(channel):
-        name = "==  {0}  ==".format(channel.name)
-        box = "{0}".format("=" * len(name))
-        return "{0}\n{1}\n{0}\n\n".format(box, name)
 
     def _formatted_thread_message(self, message):
         return "{0}\n{1}\n@{2} wrote on {3}\n{5} replies\n{0}\n{4}\n".format(
@@ -437,7 +448,7 @@ class Writer:
 
     def write_channel(self, channel, messages, threads):
         with open(self._filename(channel), 'w') as f:
-            f.write(Writer._formatted_header(channel))
+            f.write(self._channel_formatter.format(channel))
             for message in messages:
                 f.write(self._message_formatter.format(message))
                 f.write("\n")
