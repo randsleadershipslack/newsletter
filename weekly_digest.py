@@ -145,6 +145,7 @@ class Message:
         self.replies = []
         self.user_showname = ""
         self.url = ""
+        self._reaction_count = None
 
     @property
     def timestamp(self):
@@ -177,12 +178,13 @@ class Message:
 
     @property
     def reaction_count(self):
-        if 'reactions' not in self._json:
-            return 0
-        reaction_count = 0
-        for reaction in self._json['reactions']:
-            reaction_count += int(reaction['count'])
-        return reaction_count
+        if not self._reaction_count:
+            if 'reactions' not in self._json:
+                return 0
+            self._reaction_count = 0
+            for reaction in self._json['reactions']:
+                self._reaction_count += int(reaction['count'])
+        return self._reaction_count
 
     def __repr__(self):
         return repr(self._json)
