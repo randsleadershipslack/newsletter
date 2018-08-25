@@ -261,8 +261,15 @@ class Channel:
             self._accumulate_thread(message)
 
     def _accumulate_thread(self, message):
-        default_root = Message(channel_id=message.channel_id, json="")
-        self.all_messages.get(message.thread_root, default_root).replies.append(message)
+        root = message.thread_root
+        if not root in self.all_messages:
+            self.all_messages[root] = self._threaded_parent(root)
+        self.all_messages[root].replies.append(message)
+
+    def _threaded_parent(self, timestamp):
+        if timestamp in self.all_messages:
+            return self.all_messages[timestamp]
+        return Message(channel_id=self.id, json="")
 
     @staticmethod
     def _remember_user(message, users):
