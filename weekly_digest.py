@@ -235,12 +235,17 @@ class Channel:
         self.name = name
         self.messages = []
         self.threads = {}
+        self.all_messages = {}
+
+    def reset(self):
+        self.messages = []
+        self.threads = {}
+        self.all_messages = {}
 
     def fetch_messages(self, start, end, required_reactions, users):
         if required_reactions < 1:
             raise ValueError
 
-        self.messages = []
         more = True
         start_from = start.timestamp()
         end_at = end.timestamp()
@@ -252,6 +257,7 @@ class Channel:
                 message_list = response['messages']
                 for json_msg in message_list:
                     message = Message(channel_id=self.id, json=json_msg)
+                    self.all_messages[message.timestamp] = message
                     if message.from_bot:
                         continue
                     try:
@@ -424,8 +430,10 @@ if __name__ == '__main__':
         total_messages += len(channel.messages)
         total_threads += len(channel.threads)
         total_channels += 1
-        print("\t{0}: {1} potential messages, {2} long threads".format(channel.name, len(channel.messages),
-                                                                       len(channel.threads)))
+        print("\t{0}: {1} potential messages, {2} long threads from {3} total messages".format(channel.name,
+                                                                                               len(channel.messages),
+                                                                                               len(channel.threads),
+                                                                                               len(channel.all_messages)))
 
     if len(channels) > 1:
         print("\nFound {0} potential messages and {1} long threads across {2} channels".format(
