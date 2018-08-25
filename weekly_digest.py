@@ -161,6 +161,14 @@ class Message:
         return self.json['text']
 
     @property
+    def thread_root(self):
+        root = self.json.get("thread_ts")
+        if root and root != self.timestamp:
+            return root
+        return None
+
+
+    @property
     def __repr__(self):
         return self.json
 
@@ -256,8 +264,8 @@ class Channel:
                                          ts=msg.timestamp))
 
     def _accumulate_thread(self, msg):
-        root = msg.json.get("thread_ts")
-        if root and root != msg.timestamp:
+        root = msg.thread_root
+        if root:
             self.threads[root] = self.threads.get(root, 0) + 1
 
     @staticmethod
