@@ -353,6 +353,22 @@ def filter_threads(all_messages, required_responses, thread_reactions):
     return list(reversed(threads))
 
 
+class MessageFormatter:
+    """
+    A class to repeatedly format messages
+    """
+
+    def __init__(self, separator, wrapper):
+        self._sep = separator
+        self._wrapper = wrapper
+        pass
+
+    def format(self, message):
+        return "{0}\n{1}\n@{2} wrote on {3}\n{5} reactions\n{0}\n{4}\n".format(
+            self._sep, message.url, message.user_showname, message.time, self._wrapper.fill(message.text),
+            message.reaction_count)
+
+
 class Writer:
     """
     Writes the message information to file
@@ -364,10 +380,12 @@ class Writer:
         self.filtered_messages = 0
         self.total_threads = 0
         self.total_channels = 0
-        self.users = {}
+        self._users = {}
         self.folder_name = Writer._create_folder()
-        self.wrapper = textwrap.TextWrapper(width=80, expand_tabs=False, replace_whitespace=False,
+        self._separator = "-" * 80
+        self._wrapper = textwrap.TextWrapper(width=80, expand_tabs=False, replace_whitespace=False,
                                             drop_whitespace=False)
+        self._message_formatter = MessageFormatter(self._separator, self._wrapper)
         pass
 
     @staticmethod
@@ -390,16 +408,9 @@ class Writer:
         box = "{0}".format("=" * len(name))
         return "{0}\n{1}\n{0}\n\n".format(box, name)
 
-    def _formatted_message(self, message):
-        separator = "-" * 80
-        return "{0}\n{1}\n@{2} wrote on {3}\n{5} reactions\n{0}\n{4}\n".format(
-            separator, message.url, message.user_showname, message.time, self.wrapper.fill(message.text),
-            message.reaction_count)
-
     def _formatted_thread_message(self, message):
-        separator = "-" * 80
         return "{0}\n{1}\n@{2} wrote on {3}\n{5} replies\n{0}\n{4}\n".format(
-            separator, message.url, message.user_showname, message.time, self.wrapper.fill(message.text),
+            self._separator, message.url, message.user_showname, message.time, self._wrapper.fill(message.text),
             len(message.replies))
 
     def add_channel(self, channel):
@@ -412,8 +423,8 @@ class Writer:
         if not (messages or threads):
             return
 
-        annotate_messages(messages, self.users)
-        annotate_messages(threads, self.users)
+        annotate_messages(messages, self._users)
+        annotate_messages(threads, self._users)
         print("\t{0}: {1} potential messages, {2} long threads from {3} total messages".format(channel.name,
                                                                                                len(messages),
                                                                                                len(threads),
@@ -427,7 +438,7 @@ class Writer:
         with open(self._filename(channel), 'w') as f:
             f.write(Writer._formatted_header(channel))
             for message in messages:
-                f.write(self._formatted_message(message))
+                f.write(self._message_formatter.format(message))
                 f.write("\n")
 
             f.write("\n")
