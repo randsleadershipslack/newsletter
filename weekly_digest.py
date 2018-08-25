@@ -234,13 +234,13 @@ class Channel:
         self.id = channel_id
         self.name = name
         self.messages = []
+        self.threads = {}
 
     def fetch_messages(self, start, end, required_reactions, users):
         if required_reactions < 1:
             raise ValueError
 
         self.messages = []
-        self.threads = {}
         more = True
         start_from = start.timestamp()
         end_at = end.timestamp()
