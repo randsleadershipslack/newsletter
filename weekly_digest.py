@@ -151,6 +151,9 @@ class Message:
             return True
         return False
 
+    def __repr__(self):
+        return self.json
+
 
 class MessageInfo:
     """
@@ -227,7 +230,7 @@ class Channel:
                         self._accumulate_thread(msg)
                         end_at = msg.timestamp
                     except:
-                        print(msg.json)
+                        print(msg)
                         raise
             else:
                 print(response['headers'])
