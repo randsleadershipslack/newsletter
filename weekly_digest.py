@@ -358,7 +358,12 @@ class Writer:
     Writes the message information to file
     """
 
-    def __init__(self):
+    def __init__(self, options):
+        self.options = options
+        self.total_messages = 0
+        self.total_threads = 0
+        self.total_channels = 0
+        self.users = {}
         self.folder_name = Writer._create_folder()
         self.wrapper = textwrap.TextWrapper(width=80, expand_tabs=False, replace_whitespace=False,
                                             drop_whitespace=False)
@@ -396,6 +401,25 @@ class Writer:
             separator, message.url, message.user_showname, message.time, self.wrapper.fill(message.text),
             len(message.replies))
 
+    def add_channel(self, channel):
+        all_messages = channel.all_messages.values()
+        messages = filter_messages(all_messages=all_messages, required_reactions=options.parsed_args.reactions)
+        threads = filter_threads(all_messages=all_messages, required_responses=options.parsed_args.reply_threshold,
+                                 thread_reactions=options.thread_reactions)
+        if not (messages or threads):
+            return
+
+        annotate_messages(messages, self.users)
+        annotate_messages(threads, self.users)
+        print("\t{0}: {1} potential messages, {2} long threads from {3} total messages".format(channel.name,
+                                                                                               len(messages),
+                                                                                               len(threads),
+                                                                                               len(channel.all_messages)))
+        self.total_messages += len(messages)
+        self.total_threads += len(threads)
+        self.total_channels += 1
+        self.write_channel(channel, messages, threads)
+
     def write_channel(self, channel, messages, threads):
         with open(self._filename(channel), 'w') as f:
             f.write(Writer._formatted_header(channel))
@@ -422,33 +446,11 @@ if __name__ == '__main__':
     if not channels:
         sys.exit()
 
-    writer = Writer()
-    users = {}
-    total_messages = 0
-    total_threads = 0
-    total_channels = 0
+    writer = Writer(options)
     for channel in channels:
         channel.fetch_messages(options.start_timestamp, options.end_timestamp)
-        all_messages = channel.all_messages.values()
-        messages = filter_messages(all_messages=all_messages, required_reactions=options.parsed_args.reactions)
-        threads = filter_threads(all_messages=all_messages, required_responses=options.parsed_args.reply_threshold,
-                                 thread_reactions=options.thread_reactions)
-
-        if not (messages or threads):
-            continue
-
-        annotate_messages(messages, users)
-        annotate_messages(threads, users)
-
-        writer.write_channel(channel, messages, threads)
-        total_messages += len(messages)
-        total_threads += len(threads)
-        total_channels += 1
-        print("\t{0}: {1} potential messages, {2} long threads from {3} total messages".format(channel.name,
-                                                                                               len(messages),
-                                                                                               len(threads),
-                                                                                               len(channel.all_messages)))
+        writer.add_channel(channel)
 
     if len(channels) > 1:
         print("\nFound {0} potential messages and {1} long threads across {2} channels".format(
-            total_messages, total_threads, total_channels))
+            writer.total_messages, writer.total_threads, writer.total_channels))
