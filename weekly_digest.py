@@ -156,6 +156,15 @@ class Message:
     def __repr__(self):
         return self.json
 
+    @property
+    def reaction_count(self):
+        if 'reactions' not in self.json:
+            return 0
+        reaction_count = 0
+        for reaction in self.json['reactions']:
+            reaction_count += int(reaction['count'])
+        return reaction_count
+
 
 class MessageInfo:
     """
@@ -185,15 +194,6 @@ class MessageInfo:
         response = slack.api_call("chat.getPermalink", channel=self.channel_id, message_ts=self.ts)
         if response['ok']:
             self.url = response['permalink']
-
-    @staticmethod
-    def num_reactions(msg):
-        if 'reactions' not in msg.json:
-            return 0
-        reaction_count = 0
-        for reaction in msg.json['reactions']:
-            reaction_count += int(reaction['count'])
-        return reaction_count
 
 
 class Channel:
@@ -240,11 +240,11 @@ class Channel:
 
     @staticmethod
     def _has_enough_reactions(msg, required_reactions):
-        return MessageInfo.num_reactions(msg) >= required_reactions
+        return msg.reaction_count >= required_reactions
 
     def _remember_message(self, msg):
         self.messages.append(MessageInfo(channel_id=self.id, user_id=msg.json['user'],
-                                         reactions=MessageInfo.num_reactions(msg), text=msg.json['text'],
+                                         reactions=msg.reaction_count, text=msg.json['text'],
                                          ts=msg.timestamp))
 
     def _accumulate_thread(self, msg):
