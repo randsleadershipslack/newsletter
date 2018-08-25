@@ -414,7 +414,6 @@ class Writer:
         self.total_channels = 0
         self._users = {}
         self.folder_name = Writer._create_folder()
-        self._separator = "-" * 80
         self._wrapper = textwrap.TextWrapper(width=80, expand_tabs=False, replace_whitespace=False,
                                             drop_whitespace=False)
         self._channel_formatter = ChannelFormatter()
