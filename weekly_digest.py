@@ -146,11 +146,13 @@ class Message:
     def timestamp(self):
         return self.json["ts"]
 
+    @property
     def from_bot(self):
         if 'subtype' in self.json and self.json['subtype'] == "bot_message":
             return True
         return False
 
+    @property
     def __repr__(self):
         return self.json
 
@@ -221,7 +223,7 @@ class Channel:
                 message_list = response['messages']
                 for message in message_list:
                     msg = Message(message)
-                    if msg.from_bot():
+                    if msg.from_bot:
                         continue
                     try:
                         if Channel._has_enough_reactions(msg, required_reactions):
