@@ -234,11 +234,9 @@ class Channel:
     def __init__(self, channel_id, name):
         self.id = channel_id
         self.name = name
-        self.messages = []
         self.all_messages = {}
 
     def reset(self):
-        self.messages = []
         self.all_messages = {}
 
     def fetch_messages(self, start, end, required_reactions, users):
@@ -256,14 +254,12 @@ class Channel:
                 more = response['has_more']
                 message_list = response['messages']
                 for json_msg in message_list:
-                    message = Message(channel_id=self.id, json=json_msg)
-                    self.all_messages[message.timestamp] = message
-                    if message.from_bot:
-                        continue
                     try:
-                        if Channel._has_enough_reactions(message, required_reactions):
-                            self._remember_message(message)
-                            Channel._remember_user(message, users)
+                        message = Message(channel_id=self.id, json=json_msg)
+                        self.all_messages[message.timestamp] = message
+                        if message.from_bot:
+                            continue
+                        Channel._remember_user(message, users)
                         if message.thread_root:
                             replies.append(message)
                         end_at = message.timestamp
@@ -275,13 +271,6 @@ class Channel:
                 raise RuntimeError
         for message in replies:
             self._accumulate_thread(message)
-
-    @staticmethod
-    def _has_enough_reactions(message, required_reactions):
-        return message.reaction_count >= required_reactions
-
-    def _remember_message(self, message):
-        self.messages.append(MessageInfo(channel_id=message.channel_id, message=message))
 
     def _accumulate_thread(self, message):
         default_root = Message(channel_id=message.channel_id, json="")
@@ -437,7 +426,6 @@ if __name__ == '__main__':
         for (user_id, user) in users.items():
             user.fetch_name()
 
-        channel.messages.reverse()
         channel.annotate_messages(messages, users)
         channel.annotate_threads(threads)
 
