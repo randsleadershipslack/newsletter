@@ -4,11 +4,14 @@
 .*politics
 amsterdam
 announcements
+ask-rands-anything
 austin
 bademails
+bbq
 berlin
 boston
 brazil
+brexit
 canada
 colorado-connections
 daily-challenge
@@ -20,7 +23,9 @@ fite-me
 five-me
 goodmorning
 intros
+lego
 losangeles
+midwest-usa
 minnesota
 nebraska
 new-channels
