@@ -329,7 +329,7 @@ class Channel:
 
     def filter_messages(self, all_messages, required_reactions):
         filtered = []
-        for root, message in all_messages.items():
+        for message in all_messages:
             if message.reaction_count >= required_reactions:
                 filtered.append(message)
         filtered.sort(key=lambda message : message.reaction_count)
@@ -337,7 +337,7 @@ class Channel:
 
     def filter_threads(self, all_messages, required_responses, thread_reactions):
         filtered = {}
-        for root, message in all_messages.items():
+        for message in all_messages:
             if len(message.replies) >= required_responses:
                 filtered[message.timestamp] = message
             elif message.threaded_reaction_count >= thread_reactions:
@@ -439,9 +439,9 @@ if __name__ == '__main__':
     total_channels = 0
     for channel in channels:
         channel.fetch_messages(options.start_timestamp, options.end_timestamp, options.parsed_args.reactions, users)
-        messages = channel.filter_messages(all_messages=channel.all_messages,
-                                           required_reactions=options.parsed_args.reactions)
-        threads = channel.filter_threads(all_messages=channel.all_messages,
+        messages = channel.filter_messages(all_messages=channel.all_messages.values(),
+                                           required_reactiond=options.parsed_args.reactions)
+        threads = channel.filter_threads(all_messages=channel.all_messages.values(),
                                          required_responses=options.parsed_args.reply_threshold,
                                          thread_reactions=options.thread_reactions)
 
