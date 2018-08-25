@@ -341,20 +341,20 @@ class Filter:
                 filtered.append(channel)
         return filtered
 
-    def filter_messages(self, all_messages, required_reactions):
+    def filter_messages(self, all_messages):
         filtered = []
         for message in all_messages:
-            if message.reaction_count >= required_reactions:
+            if message.reaction_count >= self._options.parsed_args.reactions:
                 filtered.append(message)
         filtered.sort(key=lambda message : message.reaction_count)
         return list(reversed(filtered))
 
-    def filter_threads(self, all_messages, required_responses, thread_reactions):
+    def filter_threads(self, all_messages):
         filtered = {}
         for message in all_messages:
-            if len(message.replies) >= required_responses:
+            if len(message.replies) >= self._options.parsed_args.reply_threshold:
                 filtered[message.timestamp] = message
-            elif message.threaded_reaction_count >= thread_reactions:
+            elif message.threaded_reaction_count >= self._options.thread_reactions:
                 filtered[message.timestamp] = message
         threads = sorted(filtered.values(), key=lambda message : message.threaded_reaction_count)
         return list(reversed(threads))
@@ -447,10 +447,8 @@ class Writer:
         all_messages = channel.all_messages.values()
         self.total_messages += len(all_messages)
 
-        messages = filter.filter_messages(all_messages=all_messages, required_reactions=options.parsed_args.reactions)
-        threads = filter.filter_threads(all_messages=all_messages,
-                                        required_responses=options.parsed_args.reply_threshold,
-                                        thread_reactions=options.thread_reactions)
+        messages = filter.filter_messages(all_messages)
+        threads = filter.filter_threads(all_messages)
         if not (messages or threads):
             return
 
