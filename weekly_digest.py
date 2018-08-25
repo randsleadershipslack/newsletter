@@ -142,6 +142,7 @@ class Message:
     def __init__(self, channel_id, json):
         self.channel_id = channel_id
         self.json = json
+        self.replies = []
 
     @property
     def timestamp(self):
@@ -160,6 +161,10 @@ class Message:
     @property
     def text(self):
         return self.json['text']
+
+    @property
+    def is_thread(self):
+        return self.replies
 
     @property
     def thread_root(self):
