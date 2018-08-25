@@ -263,13 +263,20 @@ class Channel:
     def _accumulate_thread(self, message):
         root = message.thread_root
         if not root in self.all_messages:
-            self.all_messages[root] = self._threaded_parent(root)
+            self.all_messages[root] = self.fetch_message(root)
         self.all_messages[root].replies.append(message)
 
-    def _threaded_parent(self, timestamp):
+    def fetch_message(self, timestamp):
         if timestamp in self.all_messages:
             return self.all_messages[timestamp]
-        return Message(channel_id=self.id, json="")
+        response = slack.api_call("channels.history", channel=self.id, inclusive=True, latest=timestamp, count=1)
+        if response['ok']:
+            message_list = response['messages']
+            for json_msg in message_list:
+               return Message(channel_id=self.id, json=json_msg)
+
+        print(response['headers'])
+        raise RuntimeError
 
     @staticmethod
     def _remember_user(message, users):
