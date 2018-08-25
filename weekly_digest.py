@@ -142,6 +142,11 @@ class Message:
     def __init__(self, json):
         self.json = json
 
+    def from_bot(self):
+        if 'subtype' in self.json and self.json['subtype'] == "bot_message":
+            return True
+        return False
+
 
 class MessageInfo:
     """
@@ -209,7 +214,7 @@ class Channel:
                 message_list = response['messages']
                 for message in message_list:
                     msg = Message(message)
-                    if 'subtype' in msg.json and msg.json['subtype'] == "bot_message":
+                    if msg.from_bot():
                         continue
                     try:
                         if Channel._has_enough_reactions(msg.json, required_reactions):
