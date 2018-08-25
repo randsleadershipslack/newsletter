@@ -199,6 +199,7 @@ class MessageInfo:
         if not (ts or message):
             raise RuntimeError("Must provide either a timestamp or a message")
         self.ts = ts
+        self.message = message
         if message:
             self.channel_id = message.channel_id
             self.user = message.user_id
@@ -309,9 +310,18 @@ class Channel:
                 filtered[message] = count
         self.threads = filtered
 
+        filtered = {}
+        for root, message in self.all_messages.items():
+            if len(message.replies) >= required_responses:
+                info = MessageInfo(channel_id=self.id, message=message)
+                filtered[message.timestamp] = info
+        self.threaded_messages = filtered
+
     def annotate_threads(self):
         for root in self.threads.keys():
             root.annotate_link()
+        for message in self.threaded_messages.values():
+            message.annotate_link()
 
 
 class User:
@@ -381,9 +391,11 @@ class Writer:
             separator, message.url, message.user_showname, message.time, self.wrapper.fill(message.text),
             message.reactions)
 
-    def _formatted_thread(self, thread_root, count):
+    def _formatted_thread_message(self, message_info):
         separator = "-" * 80
-        return "{0}\n{1} replies: {2}\n".format(separator, count, thread_root.url)
+        return "{0}\n{1}\n@{2} wrote on {3}\n{5} replies\n{0}\n{4}\n".format(
+            separator, message_info.url, message_info.user_showname, message_info.time,
+            self.wrapper.fill(message_info.text), len(message_info.message.replies))
 
     def write_channel(self, channel):
         with open(self._filename(channel), 'w') as f:
@@ -395,8 +407,8 @@ class Writer:
             f.write("\n")
             f.write("Threaded messages: {}".format(len(channel.threads)))
             f.write("\n")
-            for thread_root, count in channel.threads.items():
-                f.write(self._formatted_thread(thread_root, count))
+            for message in channel.threaded_messages.values():
+                f.write(self._formatted_thread_message(message))
                 f.write("\n")
 
 
