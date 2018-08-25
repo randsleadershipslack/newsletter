@@ -299,13 +299,22 @@ class Channel:
             message.annotate_user(users[message.user])
             message.annotate_link()
 
+    def filter_messages(self, required_reactions):
+        filtered = []
+        for root, message in self.all_messages.items():
+            if message.reaction_count >= required_reactions:
+                info = MessageInfo(channel_id=self.id, message=message)
+                filtered.append(info)
+        filtered.sort(key=lambda info : info.message.reaction_count)
+        return list(reversed(filtered))
+
     def filter_threads(self, required_responses):
         filtered = {}
         for root, message in self.all_messages.items():
             if len(message.replies) >= required_responses:
                 info = MessageInfo(channel_id=self.id, message=message)
                 filtered[message.timestamp] = info
-        threads = sorted(filtered.values(), key=lambda message : len(message.message.replies))
+        threads = sorted(filtered.values(), key=lambda info : len(info.message.replies))
         return list(reversed(threads))
 
     def annotate_threads(self, threads):
@@ -419,6 +428,7 @@ if __name__ == '__main__':
     total_channels = 0
     for channel in channels:
         channel.fetch_messages(options.start_timestamp, options.end_timestamp, options.parsed_args.reactions, users)
+        messages = channel.filter_messages(options.parsed_args.reactions)
         threads = channel.filter_threads(options.parsed_args.reply_threshold)
 
         if not (channel.messages or threads):
