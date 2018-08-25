@@ -139,9 +139,10 @@ class Message:
     Tracks information about a particular message
     """
 
-    def __init__(self, channel_id, user_id, text, ts):
+    def __init__(self, channel_id, user_id, reactions, text, ts):
         self.channel_id = channel_id
         self.user = user_id
+        self.reactions = reactions
         self.text = text
         self.ts = ts
         time = datetime.datetime.fromtimestamp(float(ts))
@@ -161,6 +162,15 @@ class Message:
         response = slack.api_call("chat.getPermalink", channel=self.channel_id, message_ts=self.ts)
         if response['ok']:
             self.url = response['permalink']
+
+    @staticmethod
+    def num_reactions(message):
+        if 'reactions' not in message:
+            return 0
+        reaction_count = 0
+        for reaction in message['reactions']:
+            reaction_count += int(reaction['count'])
+        return reaction_count
 
 
 class Channel:
@@ -206,15 +216,11 @@ class Channel:
 
     @staticmethod
     def _has_enough_reactions(message, required_reactions):
-        if 'reactions' not in message:
-            return False
-        reaction_count = 0
-        for reaction in message['reactions']:
-            reaction_count += int(reaction['count'])
-        return reaction_count >= required_reactions
+        return Message.num_reactions(message) >= required_reactions
 
     def _remember_message(self, message):
-        self.messages.append(Message(self.id, message['user'], message['text'], message['ts']))
+        self.messages.append(Message(channel_id=self.id, user_id=message['user'],
+                                     reactions=Message.num_reactions(message), text=message['text'], ts=message['ts']))
 
     def _accumulate_thread(self, message):
         root = message.get("thread_ts")
@@ -237,7 +243,7 @@ class Channel:
         filtered = {}
         for root, count in self.threads.items():
             if count >= required_responses:
-                message = Message(self.id, None, None, root)
+                message = Message(channel_id=self.id, user_id=None, reactions=None, text=None, ts=root)
                 filtered[message] = count
         self.threads = filtered
 
@@ -309,8 +315,9 @@ class Writer:
 
     def _formatted_message(self, message):
         separator = "-" * 80
-        return "{0}\n{1}\n@{2} wrote on {3}\n{0}\n{4}\n".format(
-            separator, message.url, message.user_showname, message.time, self.wrapper.fill(message.text))
+        return "{0}\n{1}\n@{2} wrote on {3}\n{5} reactions\n{0}\n{4}\n".format(
+            separator, message.url, message.user_showname, message.time, self.wrapper.fill(message.text),
+            message.reactions)
 
     def _formatted_thread(self, thread_root, count):
         separator = "-" * 80
