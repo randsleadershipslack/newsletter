@@ -8,13 +8,7 @@ import re
 import sys
 import textwrap
 
-token = "garbage"
-try:
-    token = os.environ['API_TOKEN']
-except:
-    pass
-
-slack = SlackClient(token)
+slack = SlackClient(os.environ.get('API_TOKEN', "garbage"))
 
 
 def valid_date(s):
