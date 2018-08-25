@@ -294,8 +294,8 @@ class Channel:
             user = User(message.user_id)
             users[user.id] = user
 
-    def annotate_messages(self, users):
-        for message in self.messages:
+    def annotate_messages(self, messages, users):
+        for message in messages:
             message.annotate_user(users[message.user])
             message.annotate_link()
 
@@ -395,10 +395,10 @@ class Writer:
             separator, message_info.url, message_info.user_showname, message_info.time,
             self.wrapper.fill(message_info.text), len(message_info.message.replies))
 
-    def write_channel(self, channel, threads):
+    def write_channel(self, channel, messages, threads):
         with open(self._filename(channel), 'w') as f:
             f.write(Writer._formatted_header(channel))
-            for message in channel.messages:
+            for message in messages:
                 f.write(self._formatted_message(message))
                 f.write("\n")
 
@@ -431,22 +431,22 @@ if __name__ == '__main__':
         messages = channel.filter_messages(options.parsed_args.reactions)
         threads = channel.filter_threads(options.parsed_args.reply_threshold)
 
-        if not (channel.messages or threads):
+        if not (messages or threads):
             continue
 
         for (user_id, user) in users.items():
             user.fetch_name()
 
         channel.messages.reverse()
-        channel.annotate_messages(users)
+        channel.annotate_messages(messages, users)
         channel.annotate_threads(threads)
 
-        writer.write_channel(channel, threads)
-        total_messages += len(channel.messages)
+        writer.write_channel(channel, messages, threads)
+        total_messages += len(messages)
         total_threads += len(threads)
         total_channels += 1
         print("\t{0}: {1} potential messages, {2} long threads from {3} total messages".format(channel.name,
-                                                                                               len(channel.messages),
+                                                                                               len(messages),
                                                                                                len(threads),
                                                                                                len(channel.all_messages)))
 
