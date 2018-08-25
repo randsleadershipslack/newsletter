@@ -361,6 +361,7 @@ class Writer:
     def __init__(self, options):
         self.options = options
         self.total_messages = 0
+        self.filtered_messages = 0
         self.total_threads = 0
         self.total_channels = 0
         self.users = {}
@@ -403,6 +404,8 @@ class Writer:
 
     def add_channel(self, channel):
         all_messages = channel.all_messages.values()
+        self.total_messages += len(all_messages)
+
         messages = filter_messages(all_messages=all_messages, required_reactions=options.parsed_args.reactions)
         threads = filter_threads(all_messages=all_messages, required_responses=options.parsed_args.reply_threshold,
                                  thread_reactions=options.thread_reactions)
@@ -415,7 +418,7 @@ class Writer:
                                                                                                len(messages),
                                                                                                len(threads),
                                                                                                len(channel.all_messages)))
-        self.total_messages += len(messages)
+        self.filtered_messages += len(messages)
         self.total_threads += len(threads)
         self.total_channels += 1
         self.write_channel(channel, messages, threads)
@@ -452,5 +455,5 @@ if __name__ == '__main__':
         writer.add_channel(channel)
 
     if len(channels) > 1:
-        print("\nFound {0} potential messages and {1} long threads across {2} channels".format(
-            writer.total_messages, writer.total_threads, writer.total_channels))
+        print("\nFound {0} potential messages and {1} long threads across {2} channels and {3} messages".format(
+            writer.filtered_messages, writer.total_threads, writer.total_channels, writer.total_messages))
