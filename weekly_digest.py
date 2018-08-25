@@ -312,6 +312,10 @@ class Channel:
         raise RuntimeError
 
 
+def annotate_messages(messages, users):
+    for message in messages:
+        message.annotate(users)
+
 def get_channels(options):
     response = slack.api_call("channels.list", exclude_archived=1, exclude_members=1)
     channels = []
@@ -322,11 +326,6 @@ def get_channels(options):
             if not options.filter_channel(name):
                 channels.append(Channel(channel_id=channel_id, name=name))
     return channels
-
-
-def annotate_messages(messages, users):
-    for message in messages:
-        message.annotate(users)
 
 def filter_messages(all_messages, required_reactions):
     filtered = []
