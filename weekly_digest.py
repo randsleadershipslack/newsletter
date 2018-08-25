@@ -139,7 +139,8 @@ class Message:
     Deals with interpreting message information
     """
 
-    def __init__(self, json):
+    def __init__(self, channel_id, json):
+        self.channel_id = channel_id
         self.json = json
 
     @property
@@ -238,7 +239,7 @@ class Channel:
                 more = response['has_more']
                 message_list = response['messages']
                 for message in message_list:
-                    msg = Message(message)
+                    msg = Message(channel_id=self.id, json=message)
                     if msg.from_bot:
                         continue
                     try:
@@ -259,7 +260,7 @@ class Channel:
         return msg.reaction_count >= required_reactions
 
     def _remember_message(self, msg):
-        self.messages.append(MessageInfo(channel_id=self.id, user_id=msg.user_id,
+        self.messages.append(MessageInfo(channel_id=msg.channel_id, user_id=msg.user_id,
                                          reactions=msg.reaction_count, text=msg.text,
                                          ts=msg.timestamp))
 
