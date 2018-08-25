@@ -188,6 +188,13 @@ class Message:
         return self._reaction_count
 
     @property
+    def threaded_reaction_count(self):
+        count = 0
+        for message in self.replies:
+            count += message.reaction_count
+        return count
+
+    @property
     def time(self):
         if not self._time:
             time = datetime.datetime.fromtimestamp(float(self.timestamp))
@@ -302,6 +309,8 @@ class Channel:
         filtered = {}
         for root, message in self.all_messages.items():
             if len(message.replies) >= required_responses:
+                filtered[message.timestamp] = message
+            elif message.threaded_reaction_count >= required_responses * 2:
                 filtered[message.timestamp] = message
         threads = sorted(filtered.values(), key=lambda message : len(message.replies))
         return list(reversed(threads))
