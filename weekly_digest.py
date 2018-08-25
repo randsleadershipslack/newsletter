@@ -218,6 +218,10 @@ class Message:
     def __str__(self):
         return str(self._json)
 
+    def annotate(self, users):
+        self.annotate_user(users[self.user_id])
+        self.annotate_link()
+
     def annotate_user(self, user):
         if user:
             if user.display_name:
@@ -302,8 +306,7 @@ class Channel:
 
     def annotate_messages(self, messages, users):
         for message in messages:
-            message.annotate_user(users[message.user_id])
-            message.annotate_link()
+            message.annotate(users)
 
     def filter_messages(self, required_reactions):
         filtered = []
