@@ -331,33 +331,33 @@ class Filter:
     A class to manage filtering things out as necessary
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, options):
+        self._options = options
 
-    def filter_channels(self, channels, options):
+    def filter_channels(self, channels):
         filtered = []
         for channel in channels:
-            if not options.filter_channel(channel.name):
+            if not self._options.filter_channel(channel.name):
                 filtered.append(channel)
         return filtered
 
-def filter_messages(all_messages, required_reactions):
-    filtered = []
-    for message in all_messages:
-        if message.reaction_count >= required_reactions:
-            filtered.append(message)
-    filtered.sort(key=lambda message : message.reaction_count)
-    return list(reversed(filtered))
+    def filter_messages(self, all_messages, required_reactions):
+        filtered = []
+        for message in all_messages:
+            if message.reaction_count >= required_reactions:
+                filtered.append(message)
+        filtered.sort(key=lambda message : message.reaction_count)
+        return list(reversed(filtered))
 
-def filter_threads(all_messages, required_responses, thread_reactions):
-    filtered = {}
-    for message in all_messages:
-        if len(message.replies) >= required_responses:
-            filtered[message.timestamp] = message
-        elif message.threaded_reaction_count >= thread_reactions:
-            filtered[message.timestamp] = message
-    threads = sorted(filtered.values(), key=lambda message : message.threaded_reaction_count)
-    return list(reversed(threads))
+    def filter_threads(self, all_messages, required_responses, thread_reactions):
+        filtered = {}
+        for message in all_messages:
+            if len(message.replies) >= required_responses:
+                filtered[message.timestamp] = message
+            elif message.threaded_reaction_count >= thread_reactions:
+                filtered[message.timestamp] = message
+        threads = sorted(filtered.values(), key=lambda message : message.threaded_reaction_count)
+        return list(reversed(threads))
 
 
 class ChannelFormatter:
@@ -443,13 +443,14 @@ class Writer:
     def _filename(self, channel):
         return self.folder_name + "/" + channel.name + ".txt"
 
-    def add_channel(self, channel):
+    def add_channel(self, channel, filter):
         all_messages = channel.all_messages.values()
         self.total_messages += len(all_messages)
 
-        messages = filter_messages(all_messages=all_messages, required_reactions=options.parsed_args.reactions)
-        threads = filter_threads(all_messages=all_messages, required_responses=options.parsed_args.reply_threshold,
-                                 thread_reactions=options.thread_reactions)
+        messages = filter.filter_messages(all_messages=all_messages, required_reactions=options.parsed_args.reactions)
+        threads = filter.filter_threads(all_messages=all_messages,
+                                        required_responses=options.parsed_args.reply_threshold,
+                                        thread_reactions=options.thread_reactions)
         if not (messages or threads):
             return
 
@@ -485,8 +486,8 @@ if __name__ == '__main__':
 
     print("Looking for messages from {0} to {1}".format(options.start_date.isoformat(), options.end_date.isoformat()))
 
-    filter = Filter()
-    channels = filter.filter_channels(get_channels(), options)
+    filter = Filter(options)
+    channels = filter.filter_channels(get_channels())
     print("Found {0} channels".format(len(channels)))
     if not channels:
         sys.exit()
@@ -494,7 +495,7 @@ if __name__ == '__main__':
     writer = Writer(options)
     for channel in channels:
         channel.fetch_messages(options.start_timestamp, options.end_timestamp)
-        writer.add_channel(channel)
+        writer.add_channel(channel, filter)
         channel.reset()
 
     if len(channels) > 1:
