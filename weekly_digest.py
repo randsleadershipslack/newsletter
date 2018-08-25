@@ -222,11 +222,6 @@ class MessageInfo:
     def __init__(self, channel_id, message):
         self.channel_id = channel_id
         self.message = message
-        if message:
-            self.channel_id = message.channel_id
-            self.user = message.user_id
-            self.reactions = message.reaction_count
-            self.text = message.text
 
 
 class Channel:
