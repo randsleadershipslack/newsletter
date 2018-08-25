@@ -217,10 +217,10 @@ class Channel:
                     if msg.from_bot():
                         continue
                     try:
-                        if Channel._has_enough_reactions(msg.json, required_reactions):
-                            self._remember_message(msg.json)
-                            Channel._remember_user(msg.json, users)
-                        self._accumulate_thread(msg.json)
+                        if Channel._has_enough_reactions(msg, required_reactions):
+                            self._remember_message(msg)
+                            Channel._remember_user(msg, users)
+                        self._accumulate_thread(msg)
                         end_at = msg.json["ts"]
                     except:
                         print(msg.json)
@@ -230,24 +230,24 @@ class Channel:
                 raise RuntimeError
 
     @staticmethod
-    def _has_enough_reactions(message, required_reactions):
-        return MessageInfo.num_reactions(message) >= required_reactions
+    def _has_enough_reactions(msg, required_reactions):
+        return MessageInfo.num_reactions(msg.json) >= required_reactions
 
-    def _remember_message(self, message):
-        self.messages.append(MessageInfo(channel_id=self.id, user_id=message['user'],
-                                         reactions=MessageInfo.num_reactions(message), text=message['text'],
-                                         ts=message['ts']))
+    def _remember_message(self, msg):
+        self.messages.append(MessageInfo(channel_id=self.id, user_id=msg.json['user'],
+                                         reactions=MessageInfo.num_reactions(msg.json), text=msg.json['text'],
+                                         ts=msg.json['ts']))
 
-    def _accumulate_thread(self, message):
-        root = message.get("thread_ts")
-        if root and root != message["ts"]:
+    def _accumulate_thread(self, msg):
+        root = msg.json.get("thread_ts")
+        if root and root != msg.json["ts"]:
             self.threads[root] = self.threads.get(root, 0) + 1
 
     @staticmethod
-    def _remember_user(message, users):
-        user = users.get(message['user'], None)
+    def _remember_user(msg, users):
+        user = users.get(msg.json['user'], None)
         if not user:
-            user = User(message['user'])
+            user = User(msg.json['user'])
             users[user.id] = user
 
     def annotate_messages(self, users):
