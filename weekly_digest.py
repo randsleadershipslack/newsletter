@@ -146,6 +146,7 @@ class Message:
         self.user_showname = ""
         self.url = ""
         self._reaction_count = None
+        self._time = None
 
     @property
     def timestamp(self):
@@ -186,6 +187,14 @@ class Message:
                 self._reaction_count += int(reaction['count'])
         return self._reaction_count
 
+    @property
+    def time(self):
+        if not self._time:
+            time = datetime.datetime.fromtimestamp(float(self.timestamp))
+            time = time.replace(second=0, microsecond=0)
+            self._time = time.isoformat(sep=" ")
+        return self._time
+
     def __repr__(self):
         return repr(self._json)
 
@@ -222,12 +231,6 @@ class MessageInfo:
             self.reactions = message.reaction_count
             self.text = message.text
             self.ts = message.timestamp
-
-        time = datetime.datetime.fromtimestamp(float(self.ts))
-        time = time.replace(second=0, microsecond=0)
-        self.time = time.isoformat(sep=" ")
-        self.user_showname = ""
-        self.url = ""
 
 
 class Channel:
@@ -376,17 +379,17 @@ class Writer:
         box = "{0}".format("=" * len(name))
         return "{0}\n{1}\n{0}\n\n".format(box, name)
 
-    def _formatted_message(self, message):
+    def _formatted_message(self, info):
         separator = "-" * 80
         return "{0}\n{1}\n@{2} wrote on {3}\n{5} reactions\n{0}\n{4}\n".format(
-            separator, message.url, message.user_showname, message.time, self.wrapper.fill(message.text),
-            message.reactions)
+            separator, info.message.url, info.message.user_showname, info.message.time, self.wrapper.fill(info.message.text),
+            info.message.reaction_count)
 
     def _formatted_thread_message(self, message_info):
         separator = "-" * 80
         return "{0}\n{1}\n@{2} wrote on {3}\n{5} replies\n{0}\n{4}\n".format(
-            separator, message_info.url, message_info.user_showname, message_info.time,
-            self.wrapper.fill(message_info.text), len(message_info.message.replies))
+            separator, message_info.message.url, message_info.message.user_showname, message_info.message.time,
+            self.wrapper.fill(message_info.message.text), len(message_info.message.replies))
 
     def write_channel(self, channel, messages, threads):
         with open(self._filename(channel), 'w') as f:
