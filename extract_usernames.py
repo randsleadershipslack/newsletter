@@ -71,13 +71,13 @@ class MyParser(HTMLParser):
 
     def handle_data(self, data):
         if self.extract:
-            if not "edited by" in data:
+            if not "editors are" in data:
                 self.extracted.append(data)
 
 
     def _extract_usernames(self):
         found = []
-        matcher = re.compile("(@[a-zA-Z][a-zA-Z.][a-zA-Z]+( [A-Z][a-z]+)?)")
+        matcher = re.compile("(@[a-zA-Z][a-zA-Z.][a-zA-Z]+( [A-Z][a-z.]*)?)")
         for line in self.extracted:
             found.extend(re.findall(matcher, line))
         unique = set()
