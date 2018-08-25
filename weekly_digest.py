@@ -224,10 +224,7 @@ class Message:
 
     def _annotate_user(self, user):
         if user:
-            if user.display_name:
-                self.user_showname = user.display_name
-            else:
-                self.user_showname = user.real_name
+            self.user_showname = user.name
 
     def _annotate_link(self):
         response = slack.api_call("chat.getPermalink", channel=self.channel_id, message_ts=self.timestamp)
@@ -242,15 +239,23 @@ class User:
 
     def __init__(self, user_id):
         self.id = user_id
-        self.real_name = ""
-        self.display_name = ""
+        self._real_name = ""
+        self._display_name = ""
 
     def fetch_name(self):
-        if not self.real_name and not self.display_name:
+        if not self._real_name and not self._display_name:
             response = slack.api_call("users.info", user=self.id)
             if response['ok']:
-                self.real_name = response['user']['profile']['real_name']
-                self.display_name = response['user']['profile']['display_name']
+                self._real_name = response['user']['profile']['real_name']
+                self._display_name = response['user']['profile']['display_name']
+
+    @property
+    def name(self):
+        if not self._real_name and not self._display_name:
+            self.fetch_name()
+        if self._display_name:
+            return self._display_name
+        return self._real_name
 
 
 class Channel:
