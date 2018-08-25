@@ -249,6 +249,7 @@ class Channel:
         more = True
         start_from = start.timestamp()
         end_at = end.timestamp()
+        threaded_messages = []
         while more:
             response = slack.api_call("channels.history", channel=self.id, inclusive=False, oldest=start_from,
                                       latest=end_at, count=500)
@@ -264,7 +265,8 @@ class Channel:
                         if Channel._has_enough_reactions(message, required_reactions):
                             self._remember_message(message)
                             Channel._remember_user(message, users)
-                        self._accumulate_thread(message)
+                        if message.thread_root:
+                            threaded_messages.append(message)
                         end_at = message.timestamp
                     except:
                         print(message)
@@ -272,6 +274,8 @@ class Channel:
             else:
                 print(response['headers'])
                 raise RuntimeError
+        for message in threaded_messages:
+            self._accumulate_thread(message)
 
     @staticmethod
     def _has_enough_reactions(message, required_reactions):
