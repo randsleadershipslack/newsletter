@@ -77,7 +77,7 @@ class MyParser(HTMLParser):
 
     def _extract_usernames(self):
         found = []
-        matcher = re.compile("(@[a-zA-Z][a-zA-Z.][a-zA-Z]+( [A-Z][a-z.]*)?)")
+        matcher = re.compile("(@[a-zA-Z][a-zA-Z.][a-zA-Z]+( [A-Z][a-z.-]*)?)")
         for line in self.extracted:
             found.extend(re.findall(matcher, line))
         unique = set()

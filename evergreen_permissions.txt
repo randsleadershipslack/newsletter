@@ -1,6 +1,8 @@
+@aldenpeterson
 @alowishus
 @chuqui
 @daveoflynn
+@David Morgantini
 @David Van Duzer
 @derricks
 @edgriebel
@@ -9,6 +11,7 @@
 @eugk
 @Ian Struckhoff
 @jimgrey
+@kathkeating
 @Kevin Goldsmith
 @kevin.newman
 @kiger
@@ -16,6 +19,7 @@
 @matt.schellhas
 @miked
 @mmozuras
+@mngwinn
 @paul.wright
 @pixeldiva
 @ranjani
