@@ -393,12 +393,14 @@ class ThreadFormatter:
     def __init__(self, wrapper, separator_char='-'):
         self._sep = separator_char * 80
         self._wrapper = wrapper
-        self._template = "{sep}\n{url}\n@{name} wrote on {time}\n{replies} replies\n{sep}\n{text}\n"
+        self._template = \
+            "{sep}\n{url}\n@{name} wrote on {time}\n{replies} replies, {react} reactions in thread\n{sep}\n{text}\n"
         pass
 
     def format(self, message):
         return self._template.format( sep=self._sep, url=message.url, name=message.user_showname, time=message.time,
-                                      text=self._wrapper.fill(message.text), replies=len(message.replies))
+                                      text=self._wrapper.fill(message.text), replies=len(message.replies),
+                                      react=message.threaded_reaction_count)
 
 
 class Writer:
