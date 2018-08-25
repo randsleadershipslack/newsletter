@@ -219,18 +219,14 @@ class MessageInfo:
     Tracks information about a particular message
     """
 
-    def __init__(self, channel_id, ts=None, message=None):
+    def __init__(self, channel_id, message):
         self.channel_id = channel_id
-        if not (ts or message):
-            raise RuntimeError("Must provide either a timestamp or a message")
-        self.ts = ts
         self.message = message
         if message:
             self.channel_id = message.channel_id
             self.user = message.user_id
             self.reactions = message.reaction_count
             self.text = message.text
-            self.ts = message.timestamp
 
 
 class Channel:
