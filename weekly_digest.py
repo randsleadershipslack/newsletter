@@ -468,6 +468,9 @@ class ChannelWriter(Writer):
 
     def add_channel(self, channel):
         all_messages = channel.all_messages.values()
+        if not all_messages:
+            return
+
         self.total_messages += len(all_messages)
 
         messages = self._filter.filter_messages(all_messages)
@@ -521,6 +524,9 @@ class ConsolidatedWriter(Writer):
 
     def add_channel(self, channel):
         all_messages = channel.all_messages.values()
+        if not all_messages:
+            return
+
         self.total_messages += len(all_messages)
 
         messages = self._filter.filter_messages(all_messages)
