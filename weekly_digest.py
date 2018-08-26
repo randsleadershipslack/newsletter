@@ -411,7 +411,7 @@ class ThreadFormatter:
                                       react=message.threaded_reaction_count)
 
 
-class Writer:
+class ChannelWriter:
     """
     Writes the message information to file
     """
@@ -424,7 +424,7 @@ class Writer:
         self.total_threads = 0
         self.total_channels = 0
         self._users = {}
-        self.folder_name = Writer._create_folder()
+        self.folder_name = ChannelWriter._create_folder()
         self._wrapper = textwrap.TextWrapper(width=80, expand_tabs=False, replace_whitespace=False,
                                             drop_whitespace=False)
         self._channel_formatter = ChannelFormatter()
@@ -514,7 +514,7 @@ if __name__ == '__main__':
     if not channels:
         sys.exit()
 
-    writer = Writer(filter, MessageSorter())
+    writer = ChannelWriter(filter, MessageSorter())
     for channel in channels:
         channel.fetch_messages(options.start_timestamp, options.end_timestamp)
         writer.add_channel(channel)
