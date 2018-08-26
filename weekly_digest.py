@@ -146,8 +146,9 @@ class Message:
     Deals with interpreting message information
     """
 
-    def __init__(self, channel_id, json):
-        self.channel_id = channel_id
+    def __init__(self, channel, json):
+        self.channel_id = channel.id
+        self.channel_name = channel.name
         self._json = json
         self.replies = []
         self.username = ""
@@ -296,7 +297,7 @@ class Channel:
         messages = []
         message_list = response['messages']
         for json_msg in message_list:
-            messages.append(Message(channel_id=self.id, json=json_msg))
+            messages.append(Message(channel=self, json=json_msg))
         return messages
 
     def _accumulate_thread(self, message):
@@ -385,15 +386,18 @@ class MessageFormatter:
     A class to repeatedly format messages
     """
 
-    def __init__(self, wrapper, separator_char='-'):
+    def __init__(self, wrapper, add_channel_name=True, separator_char='-'):
         self._sep = separator_char * 80
         self._wrapper = wrapper
         self._template = "{sep}\n{url}\n@{name} wrote on {time}\n{react} reactions\n{sep}\n{text}\n"
+        if add_channel_name:
+            self._template = "{sep}\n{url}\n@{name} wrote in #{channel} on {time}\n{react} reactions\n{sep}\n{text}\n"
         pass
 
     def format(self, message):
         return self._template.format(sep=self._sep, url=message.url, name=message.username, time=message.time,
-                                     text=self._wrapper.fill(message.text), react=message.reaction_count)
+                                     text=self._wrapper.fill(message.text), react=message.reaction_count,
+                                     channel=message.channel_name)
 
 
 class ThreadFormatter:
@@ -401,17 +405,20 @@ class ThreadFormatter:
     A class to repeatedly format thread starting messages
     """
 
-    def __init__(self, wrapper, separator_char='-'):
+    def __init__(self, wrapper, add_channel_name=True, separator_char='-'):
         self._sep = separator_char * 80
         self._wrapper = wrapper
         self._template = \
             "{sep}\n{url}\n@{name} wrote on {time}\n{replies} replies, {react} reactions in thread\n{sep}\n{text}\n"
+        if add_channel_name:
+            self._template = "{sep}\n{url}\n@{name} wrote in #{channel} on {time}\n{replies} replies, {react} " +\
+                             "reactions in thread\n{sep}\n{text}\n"
         pass
 
     def format(self, message):
         return self._template.format( sep=self._sep, url=message.url, name=message.username, time=message.time,
                                       text=self._wrapper.fill(message.text), replies=len(message.replies),
-                                      react=message.threaded_reaction_count)
+                                      react=message.threaded_reaction_count, channel=message.channel_name)
 
 
 class Writer:
@@ -427,8 +434,6 @@ class Writer:
         self.folder_name = Writer._create_folder()
         self._wrapper = textwrap.TextWrapper(width=80, expand_tabs=False, replace_whitespace=False,
                                              drop_whitespace=False)
-        self._message_formatter = MessageFormatter(self._wrapper)
-        self._thread_formatter = ThreadFormatter(self._wrapper)
         self._channel_report_template = \
             "\t{name}: {messages} potential messages, {threads} long threads from {total} total messages"
 
@@ -458,6 +463,8 @@ class ChannelWriter(Writer):
         self.total_threads = 0
         self._users = {}
         self._channel_formatter = ChannelFormatter()
+        self._message_formatter = MessageFormatter(self._wrapper, add_channel_name=False)
+        self._thread_formatter = ThreadFormatter(self._wrapper, add_channel_name=False)
 
     def add_channel(self, channel):
         all_messages = channel.all_messages.values()
@@ -509,6 +516,8 @@ class ConsolidatedWriter(Writer):
         super().__init__(filter, sorter)
         self._messages = []
         self._threads = []
+        self._message_formatter = MessageFormatter(self._wrapper, add_channel_name=True)
+        self._thread_formatter = ThreadFormatter(self._wrapper, add_channel_name=True)
 
     def add_channel(self, channel):
         all_messages = channel.all_messages.values()
