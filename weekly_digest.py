@@ -8,13 +8,7 @@ import re
 import sys
 import textwrap
 
-token = "garbage"
-try:
-    token = os.environ['API_TOKEN']
-except:
-    pass
-
-slack = SlackClient(token)
+slack = SlackClient(os.environ.get('API_TOKEN', "garbage"))
 
 
 def valid_date(s):
@@ -52,17 +46,30 @@ class Options(argparse.ArgumentParser):
                           help="Only examine the channel(s) given in the file (regular expressions allowed)")
         self.add_argument("--reactions", type=int, default=3, metavar="THRESHOLD",
                           help="The number of reactions necessary for retaining in the digest (default: %(default)s)")
-        self.add_argument("--threads", type=int, default=10, metavar="THRESHOLD",
-                          help="The number of replies necessary for retaining a thread in the digest (default: %(default)s)")
+        self.add_argument("--replies", type=int, default=10, metavar="THRESHOLD", dest='reply_threshold',
+                          help="The number of replies necessary for retaining a thread in the digest " +
+                               "(default: %(default)s)")
+        self.add_argument("--thread-reactions", type=int, metavar="THRESHOLD", dest='thread_reply_threshold',
+                          help="The number of in-thread reactions necessary for retaining a thread in the digest " +
+                               "(default: twice the reactions threshold)")
         self.add_argument("--exclude", nargs='+', metavar="CHANNEL",
                           help="Specifically exclude the given channel(s) (regular expressions allowed)")
         self.add_argument("--exclude-list", metavar="FILE",
                           help="Specifically exclude the channel(s) given in the file (regular expressions allowed)")
+        self.add_argument("--split-by-channels", action='store_true', dest='split_by_channels',
+                          help="Split the results by channel rather than consolidating messages and threads.  " +
+                               "Default false.")
 
     def store_args(self):
         self.parsed_args = self.parse_args()
         self._extract_dates()
         self._compile_lists()
+
+    @property
+    def thread_reactions(self):
+        if self.parsed_args.thread_reply_threshold:
+            return self.parsed_args.thread_reply_threshold
+        return self.parsed_args.reactions * 2
 
     @staticmethod
     def _find_week(week):
@@ -136,31 +143,118 @@ class Options(argparse.ArgumentParser):
 
 class Message:
     """
-    Tracks information about a particular message
+    Deals with interpreting message information
     """
 
-    def __init__(self, channel_id, user_id, text, ts):
-        self.channel_id = channel_id
-        self.user = user_id
-        self.text = text
-        self.ts = ts
-        time = datetime.datetime.fromtimestamp(float(ts))
-        time = time.replace(second=0, microsecond=0)
-        self.time = time.isoformat(sep=" ")
-        self.user_showname = ""
+    def __init__(self, channel, json):
+        self.channel_id = channel.id
+        self.channel_name = channel.name
+        self._json = json
+        self.replies = []
+        self.username = ""
         self.url = ""
+        self._reaction_count = None
+        self._time = None
 
-    def annotate_user(self, user):
+    @property
+    def timestamp(self):
+        return self._json["ts"]
+
+    @property
+    def from_bot(self):
+        if 'subtype' in self._json and self._json['subtype'] == "bot_message":
+            return True
+        return False
+
+    @property
+    def user_id(self):
+        return self._json.get('user')
+
+    @property
+    def text(self):
+        return self._json.get('text')
+
+    @property
+    def is_thread(self):
+        return self.replies
+
+    @property
+    def thread_root(self):
+        root = self._json.get("thread_ts")
+        if root and root != self.timestamp:
+            return root
+        return None
+
+    @property
+    def reaction_count(self):
+        if not self._reaction_count:
+            if 'reactions' not in self._json:
+                return 0
+            self._reaction_count = 0
+            for reaction in self._json['reactions']:
+                self._reaction_count += int(reaction['count'])
+        return self._reaction_count
+
+    @property
+    def threaded_reaction_count(self):
+        count = 0
+        for message in self.replies:
+            count += message.reaction_count
+        return count
+
+    @property
+    def time(self):
+        if not self._time:
+            time = datetime.datetime.fromtimestamp(float(self.timestamp))
+            time = time.replace(second=0, microsecond=0)
+            self._time = time.isoformat(sep=" ")
+        return self._time
+
+    def __repr__(self):
+        return repr(self._json)
+
+    def __str__(self):
+        return str(self._json)
+
+    def annotate(self, users):
+        self._annotate_user(users)
+        self._annotate_link()
+
+    def _annotate_user(self, users):
+        user = users.get(self.user_id, User(self.user_id))
         if user:
-            if user.display_name:
-                self.user_showname = user.display_name
-            else:
-                self.user_showname = user.real_name
+            self.username = user.name
 
-    def annotate_link(self):
-        response = slack.api_call("chat.getPermalink", channel=self.channel_id, message_ts=self.ts)
+    def _annotate_link(self):
+        response = slack.api_call("chat.getPermalink", channel=self.channel_id, message_ts=self.timestamp)
         if response['ok']:
             self.url = response['permalink']
+
+
+class User:
+    """
+    Tracks and aggregates information specific to a user.
+    """
+
+    def __init__(self, user_id):
+        self.id = user_id
+        self._real_name = ""
+        self._display_name = ""
+
+    def fetch_name(self):
+        if not self._real_name and not self._display_name:
+            response = slack.api_call("users.info", user=self.id)
+            if response['ok']:
+                self._real_name = response['user']['profile']['real_name']
+                self._display_name = response['user']['profile']['display_name']
+
+    @property
+    def name(self):
+        if not self._real_name and not self._display_name:
+            self.fetch_name()
+        if self._display_name:
+            return self._display_name
+        return self._real_name
 
 
 class Channel:
@@ -171,121 +265,177 @@ class Channel:
     def __init__(self, channel_id, name):
         self.id = channel_id
         self.name = name
-        self.messages = []
+        self.all_messages = {}
 
-    def fetch_messages(self, start, end, required_reactions, users):
-        if required_reactions < 1:
-            raise ValueError
+    def reset(self):
+        self.all_messages = {}
 
-        self.messages = []
-        self.threads = {}
+    def fetch_messages(self, start, end):
         more = True
         start_from = start.timestamp()
         end_at = end.timestamp()
+        replies = []
         while more:
             response = slack.api_call("channels.history", channel=self.id, inclusive=False, oldest=start_from,
                                       latest=end_at, count=500)
             if response['ok']:
                 more = response['has_more']
-                message_list = response['messages']
-                for message in message_list:
-                    if 'subtype' in message and message['subtype'] == "bot_message":
+                for message in self._extract_messages(response):
+                    self.all_messages[message.timestamp] = message
+                    if message.from_bot:
                         continue
-                    try:
-                        if Channel._has_enough_reactions(message, required_reactions):
-                            self._remember_message(message)
-                            Channel._remember_user(message, users)
-                        self._accumulate_thread(message)
-                        end_at = message["ts"]
-                    except:
-                        print(message)
-                        raise
+                    if message.thread_root:
+                        replies.append(message)
+                    end_at = message.timestamp
             else:
                 print(response['headers'])
                 raise RuntimeError
+        for message in replies:
+            self._accumulate_thread(message)
 
-    @staticmethod
-    def _has_enough_reactions(message, required_reactions):
-        if 'reactions' not in message:
-            return False
-        reaction_count = 0
-        for reaction in message['reactions']:
-            reaction_count += int(reaction['count'])
-        return reaction_count >= required_reactions
-
-    def _remember_message(self, message):
-        self.messages.append(Message(self.id, message['user'], message['text'], message['ts']))
+    def _extract_messages(self, response):
+        messages = []
+        message_list = response['messages']
+        for json_msg in message_list:
+            messages.append(Message(channel=self, json=json_msg))
+        return messages
 
     def _accumulate_thread(self, message):
-        root = message.get("thread_ts")
-        if root and root != message["ts"]:
-            self.threads[root] = self.threads.get(root, 0) + 1
+        root = message.thread_root
+        if not root in self.all_messages:
+            self.all_messages[root] = self.fetch_message(root)
+        self.all_messages[root].replies.append(message)
 
-    @staticmethod
-    def _remember_user(message, users):
-        user = users.get(message['user'], None)
-        if not user:
-            user = User(message['user'])
-            users[user.id] = user
-
-    def annotate_messages(self, users):
-        for message in self.messages:
-            message.annotate_user(users[message.user])
-            message.annotate_link()
-
-    def filter_threads(self, required_responses):
-        filtered = {}
-        for root, count in self.threads.items():
-            if count >= required_responses:
-                message = Message(self.id, None, None, root)
-                filtered[message] = count
-        self.threads = filtered
-
-    def annotate_threads(self):
-        for root in self.threads.keys():
-            root.annotate_link()
+    def fetch_message(self, timestamp):
+        if timestamp in self.all_messages:
+            return self.all_messages[timestamp]
+        response = slack.api_call("channels.history", channel=self.id, inclusive=True, latest=timestamp, count=1)
+        if response['ok']:
+            return self._extract_messages(response)[0]
+        print(response['headers'])
+        raise RuntimeError
 
 
-class User:
+class MessageSorter:
     """
-    Tracks and aggregates information specific to a user.
+    A class to sort lists of messages
     """
 
-    def __init__(self, user_id):
-        self.id = user_id
-        self.real_name = ""
-        self.display_name = ""
+    def __init__(self):
+        pass
 
-    def fetch_name(self):
-        if not self.real_name and not self.display_name:
-            response = slack.api_call("users.info", user=self.id)
-            if response['ok']:
-                self.real_name = response['user']['profile']['real_name']
-                self.display_name = response['user']['profile']['display_name']
+    def sort_messages(self, messages):
+        messages.sort(key=lambda message : message.reaction_count)
+        messages.reverse()
+
+    def sort_threads(self, messages):
+        messages.sort(key=lambda message : message.threaded_reaction_count)
+        messages.reverse()
 
 
-def get_channels(options):
-    response = slack.api_call("channels.list", exclude_archived=1, exclude_members=1)
-    channels = []
-    if response["ok"]:
-        for channel in response["channels"]:
-            name = channel['name']
-            channel_id = channel['id']
-            if not options.filter_channel(name):
-                channels.append(Channel(channel_id=channel_id, name=name))
-    return channels
+class Filter:
+    """
+    A class to manage filtering things out as necessary
+    """
+
+    def __init__(self, options):
+        self._options = options
+
+    def filter_channels(self, channels):
+        filtered = []
+        for channel in channels:
+            if not self._options.filter_channel(channel.name):
+                filtered.append(channel)
+        return filtered
+
+    def filter_messages(self, all_messages):
+        filtered = []
+        for message in all_messages:
+            if message.reaction_count >= self._options.parsed_args.reactions:
+                filtered.append(message)
+        return filtered
+
+    def filter_threads(self, all_messages):
+        filtered = []
+        for message in all_messages:
+            if len(message.replies) >= self._options.parsed_args.reply_threshold:
+                filtered.append(message)
+            elif message.threaded_reaction_count >= self._options.thread_reactions:
+                filtered.append(message)
+        return filtered
+
+
+class ChannelFormatter:
+    """
+    A class to repeatedly format channels
+    """
+
+    def __init__(self, separator_char='='):
+        self._sep = separator_char
+        self._template = "{box}\n{name}\n{box}\n\n"
+        pass
+
+    def format(self, channel):
+        name = self._sep * 2 + ' ' * 2 + channel.name + ' ' * 2 + self._sep * 2
+        box = self._sep * len(name)
+        return self._template.format(box=box, name=name)
+
+
+class MessageFormatter:
+    """
+    A class to repeatedly format messages
+    """
+
+    def __init__(self, wrapper, add_channel_name=True, separator_char='-'):
+        self._sep = separator_char * 80
+        self._wrapper = wrapper
+        self._template = "{sep}\n{url}\n@{name} wrote on {time}\n{react} reactions\n{sep}\n{text}\n"
+        if add_channel_name:
+            self._template = "{sep}\n{url}\n@{name} wrote in #{channel} on {time}\n{react} reactions\n{sep}\n{text}\n"
+        pass
+
+    def format(self, message):
+        return self._template.format(sep=self._sep, url=message.url, name=message.username, time=message.time,
+                                     text=self._wrapper.fill(message.text), react=message.reaction_count,
+                                     channel=message.channel_name)
+
+
+class ThreadFormatter:
+    """
+    A class to repeatedly format thread starting messages
+    """
+
+    def __init__(self, wrapper, add_channel_name=True, separator_char='-'):
+        self._sep = separator_char * 80
+        self._wrapper = wrapper
+        self._template = \
+            "{sep}\n{url}\n@{name} wrote on {time}\n{replies} replies, {react} reactions in thread\n{sep}\n{text}\n"
+        if add_channel_name:
+            self._template = "{sep}\n{url}\n@{name} wrote in #{channel} on {time}\n{replies} replies, {react} " +\
+                             "reactions in thread\n{sep}\n{text}\n"
+        pass
+
+    def format(self, message):
+        return self._template.format( sep=self._sep, url=message.url, name=message.username, time=message.time,
+                                      text=self._wrapper.fill(message.text), replies=len(message.replies),
+                                      react=message.threaded_reaction_count, channel=message.channel_name)
 
 
 class Writer:
     """
-    Writes the message information to file
+    A base class for writing
     """
 
-    def __init__(self):
+    def __init__(self, filter, sorter):
+        self._filter = filter
+        self._sorter = sorter
+        self.total_messages = 0
+        self.total_channels = 0
         self.folder_name = Writer._create_folder()
-        self.wrapper = textwrap.TextWrapper(width=80, expand_tabs=False, replace_whitespace=False,
-                                            drop_whitespace=False)
-        pass
+        self._wrapper = textwrap.TextWrapper(width=80, expand_tabs=False, replace_whitespace=False,
+                                             drop_whitespace=False)
+        self._channel_report_template = \
+            "\t{name}: {messages} potential messages, {threads} long threads from {total} total messages"
 
     @staticmethod
     def _create_folder():
@@ -298,38 +448,136 @@ class Writer:
             raise
         return name
 
-    def _filename(self, channel):
-        return self.folder_name + "/" + channel.name + ".txt"
+    def _filename(self, name):
+        return self.folder_name + "/" + name + ".txt"
 
-    @staticmethod
-    def _formatted_header(channel):
-        name = "==  {0}  ==".format(channel.name)
-        box = "{0}".format("=" * len(name))
-        return "{0}\n{1}\n{0}\n\n".format(box, name)
 
-    def _formatted_message(self, message):
-        separator = "-" * 80
-        return "{0}\n{1}\n@{2} wrote on {3}\n{0}\n{4}\n".format(
-            separator, message.url, message.user_showname, message.time, self.wrapper.fill(message.text))
+class ChannelWriter(Writer):
+    """
+    Writes the message information to files by channel
+    """
 
-    def _formatted_thread(self, thread_root, count):
-        separator = "-" * 80
-        return "{0}\n{1} replies: {2}\n".format(separator, count, thread_root.url)
+    def __init__(self, filter, sorter):
+        super().__init__(filter, sorter)
+        self.filtered_messages = 0
+        self.total_threads = 0
+        self._users = {}
+        self._channel_formatter = ChannelFormatter()
+        self._message_formatter = MessageFormatter(self._wrapper, add_channel_name=False)
+        self._thread_formatter = ThreadFormatter(self._wrapper, add_channel_name=False)
 
-    def write_channel(self, channel):
-        with open(self._filename(channel), 'w') as f:
-            f.write(Writer._formatted_header(channel))
-            for message in channel.messages:
-                f.write(self._formatted_message(message))
+    def add_channel(self, channel):
+        all_messages = channel.all_messages.values()
+        if not all_messages:
+            return
+
+        self.total_messages += len(all_messages)
+
+        messages = self._filter.filter_messages(all_messages)
+        threads = self._filter.filter_threads(all_messages)
+        if not (messages or threads):
+            return
+
+        annotate_messages(messages, self._users)
+        annotate_messages(threads, self._users)
+        print(self._channel_report_template.format(name=channel.name, messages=len(messages), threads=len(threads),
+                                                   total=len(channel.all_messages)))
+        self.filtered_messages += len(messages)
+        self.total_threads += len(threads)
+        self.total_channels += 1
+        self._write_channel(channel, messages, threads)
+
+    def _write_channel(self, channel, messages, threads):
+        with open(self._filename(channel.name), 'w') as f:
+            f.write(self._channel_formatter.format(channel))
+
+            self._sorter.sort_messages(messages)
+            for message in messages:
+                f.write(self._message_formatter.format(message))
                 f.write("\n")
 
+            self._sorter.sort_threads(threads)
             f.write("\n")
-            f.write("Threaded messages: {}".format(len(channel.threads)))
+            f.write("Threaded messages: {}".format(len(threads)))
             f.write("\n")
-            for thread_root, count in channel.threads.items():
-                f.write(self._formatted_thread(thread_root, count))
+            for message in threads:
+                f.write(self._thread_formatter.format(message))
                 f.write("\n")
 
+    def finalize(self):
+        if self.total_channels > 1:
+            print("\nFound {0} potential messages and {1} long threads across {2} channels and {3} messages".format(
+                self.filtered_messages, self.total_threads, self.total_channels, self.total_messages))
+
+
+class ConsolidatedWriter(Writer):
+    """
+    Writes the message information to files by messages and threads
+    """
+
+    def __init__(self, filter, sorter):
+        super().__init__(filter, sorter)
+        self._messages = []
+        self._threads = []
+        self._message_formatter = MessageFormatter(self._wrapper, add_channel_name=True)
+        self._thread_formatter = ThreadFormatter(self._wrapper, add_channel_name=True)
+
+    def add_channel(self, channel):
+        all_messages = channel.all_messages.values()
+        if not all_messages:
+            return
+
+        self.total_messages += len(all_messages)
+
+        messages = self._filter.filter_messages(all_messages)
+        threads = self._filter.filter_threads(all_messages)
+
+        print(self._channel_report_template.format(name=channel.name, messages=len(messages), threads=len(threads),
+                                                   total=len(channel.all_messages)))
+        self._messages.extend(messages)
+        self._threads.extend(threads)
+        self.total_channels += 1
+
+    def _write_messages(self):
+        with open(self._filename("messages"), 'w') as f:
+            self._sorter.sort_messages(self._messages)
+            for message in self._messages:
+                f.write(self._message_formatter.format(message))
+                f.write("\n")
+
+    def _write_threads(self):
+        with open(self._filename("threads"), 'w') as f:
+            self._sorter.sort_threads(self._threads)
+            for message in self._threads:
+                f.write(self._thread_formatter.format(message))
+                f.write("\n")
+
+    def finalize(self):
+        self._users = {}
+        annotate_messages(self._messages, self._users)
+        annotate_messages(self._threads, self._users)
+
+        self._write_messages()
+        self._write_threads()
+
+        if self.total_channels > 1:
+            print("\nFound {0} potential messages and {1} long threads across {2} channels and {3} messages".format(
+                len(self._messages), len(self._threads), writer.total_channels, writer.total_messages))
+
+
+def annotate_messages(messages, users):
+    for message in messages:
+        message.annotate(users)
+
+def get_channels():
+    response = slack.api_call("channels.list", exclude_archived=True, exclude_members=True)
+    channels = []
+    if response["ok"]:
+        for channel in response["channels"]:
+            name = channel['name']
+            channel_id = channel['id']
+            channels.append(Channel(channel_id=channel_id, name=name))
+    return channels
 
 if __name__ == '__main__':
     options = Options()
@@ -337,37 +585,18 @@ if __name__ == '__main__':
 
     print("Looking for messages from {0} to {1}".format(options.start_date.isoformat(), options.end_date.isoformat()))
 
-    users = {}
-    channels = get_channels(options)
+    filter = Filter(options)
+    channels = filter.filter_channels(get_channels())
     print("Found {0} channels".format(len(channels)))
     if not channels:
         sys.exit()
 
-    writer = Writer()
-    total_messages = 0
-    total_threads = 0
-    total_channels = 0
+    writer = ConsolidatedWriter(filter, MessageSorter())
+    if options.parsed_args.split_by_channels:
+        writer = ChannelWriter(filter, MessageSorter())
     for channel in channels:
-        channel.fetch_messages(options.start_timestamp, options.end_timestamp, options.parsed_args.reactions, users)
-        channel.filter_threads(options.parsed_args.threads)
+        channel.fetch_messages(options.start_timestamp, options.end_timestamp)
+        writer.add_channel(channel)
+        channel.reset()
 
-        if not (channel.messages or channel.threads):
-            continue
-
-        for (user_id, user) in users.items():
-            user.fetch_name()
-
-        channel.messages.reverse()
-        channel.annotate_messages(users)
-        channel.annotate_threads()
-
-        writer.write_channel(channel)
-        total_messages += len(channel.messages)
-        total_threads += len(channel.threads)
-        total_channels += 1
-        print("\t{0}: {1} potential messages, {2} long threads".format(channel.name, len(channel.messages),
-                                                                       len(channel.threads)))
-
-    if len(channels) > 1:
-        print("\nFound {0} potential messages and {1} long threads across {2} channels".format(
-            total_messages, total_threads, total_channels))
+    writer.finalize()
