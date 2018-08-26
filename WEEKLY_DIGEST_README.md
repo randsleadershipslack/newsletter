@@ -49,6 +49,8 @@ optional arguments:
                         expressions allowed)
   --exclude-list FILE   Specifically exclude the channel(s) given in the file
                         (regular expressions allowed)
+  --split-by-channels   Split the results by channel rather than consolidating
+                        messages and threads. Default false.
 ```
 
 ## Setup/Install

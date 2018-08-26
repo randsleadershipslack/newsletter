@@ -56,6 +56,9 @@ class Options(argparse.ArgumentParser):
                           help="Specifically exclude the given channel(s) (regular expressions allowed)")
         self.add_argument("--exclude-list", metavar="FILE",
                           help="Specifically exclude the channel(s) given in the file (regular expressions allowed)")
+        self.add_argument("--split-by-channels", action='store_true', dest='split_by_channels',
+                          help="Split the results by channel rather than consolidating messages and threads.  " +
+                               "Default false.")
 
     def store_args(self):
         self.parsed_args = self.parse_args()
@@ -590,6 +593,8 @@ if __name__ == '__main__':
         sys.exit()
 
     writer = ConsolidatedWriter(filter, MessageSorter())
+    if options.parsed_args.split_by_channels:
+        writer = ChannelWriter(filter, MessageSorter())
     for channel in channels:
         channel.fetch_messages(options.start_timestamp, options.end_timestamp)
         writer.add_channel(channel)
