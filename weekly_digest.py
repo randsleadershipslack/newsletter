@@ -109,27 +109,27 @@ class Options(argparse.ArgumentParser):
 
     def _add_command_line_channels(self):
         if self.parsed_args.channel:
-            for channel in self.parsed_args.channel:
-                self._whitelist.append(re.compile(channel))
+            for chan in self.parsed_args.channel:
+                self._whitelist.append(re.compile(chan))
 
     def _add_command_line_exclusions(self):
         if self.parsed_args.exclude:
-            for channel in self.parsed_args.exclude:
-                self._blacklist.append(re.compile(channel))
+            for chan in self.parsed_args.exclude:
+                self._blacklist.append(re.compile(chan))
 
     def _add_channels_from_file(self):
         if self.parsed_args.channel_list:
             with open(self.parsed_args.channel_list, 'r') as f:
                 for line in f:
-                    for channel in line.split():
-                        self._whitelist.append(re.compile(channel))
+                    for chan in line.split():
+                        self._whitelist.append(re.compile(chan))
 
     def _exclude_channels_from_file(self):
         if self.parsed_args.exclude_list:
             with open(self.parsed_args.exclude_list, 'r') as f:
                 for line in f:
-                    for channel in line.split():
-                        self._blacklist.append(re.compile(channel))
+                    for chan in line.split():
+                        self._blacklist.append(re.compile(chan))
 
     def filter_channel(self, name):
         if any(expression.match(name) for expression in self._whitelist):
@@ -302,7 +302,7 @@ class Channel:
 
     def _accumulate_thread(self, message):
         root = message.thread_root
-        if not root in self.all_messages:
+        if root not in self.all_messages:
             self.all_messages[root] = self.fetch_message(root)
         self.all_messages[root].replies.append(message)
 
@@ -325,11 +325,11 @@ class MessageSorter:
         pass
 
     def sort_messages(self, messages):
-        messages.sort(key=lambda message : message.reaction_count)
+        messages.sort(key=lambda message: message.reaction_count)
         messages.reverse()
 
     def sort_threads(self, messages):
-        messages.sort(key=lambda message : message.threaded_reaction_count)
+        messages.sort(key=lambda message: message.threaded_reaction_count)
         messages.reverse()
 
 
@@ -416,9 +416,9 @@ class ThreadFormatter:
         pass
 
     def format(self, message):
-        return self._template.format( sep=self._sep, url=message.url, name=message.username, time=message.time,
-                                      text=self._wrapper.fill(message.text), replies=len(message.replies),
-                                      react=message.threaded_reaction_count, channel=message.channel_name)
+        return self._template.format(sep=self._sep, url=message.url, name=message.username, time=message.time,
+                                     text=self._wrapper.fill(message.text), replies=len(message.replies),
+                                     react=message.threaded_reaction_count, channel=message.channel_name)
 
 
 class Writer:
@@ -426,8 +426,8 @@ class Writer:
     A base class for writing
     """
 
-    def __init__(self, filter, sorter):
-        self._filter = filter
+    def __init__(self, message_filter, sorter):
+        self._filter = message_filter
         self._sorter = sorter
         self.total_messages = 0
         self.total_channels = 0
@@ -457,8 +457,8 @@ class ChannelWriter(Writer):
     Writes the message information to files by channel
     """
 
-    def __init__(self, filter, sorter):
-        super().__init__(filter, sorter)
+    def __init__(self, message_filter, sorter):
+        super().__init__(message_filter, sorter)
         self.filtered_messages = 0
         self.total_threads = 0
         self._users = {}
@@ -515,8 +515,8 @@ class ConsolidatedWriter(Writer):
     Writes the message information to files by messages and threads
     """
 
-    def __init__(self, filter, sorter):
-        super().__init__(filter, sorter)
+    def __init__(self, message_filter, sorter):
+        super().__init__(message_filter, sorter)
         self._messages = []
         self._threads = []
         self._message_formatter = MessageFormatter(self._wrapper, add_channel_name=True)
@@ -553,9 +553,9 @@ class ConsolidatedWriter(Writer):
                 f.write("\n")
 
     def finalize(self):
-        self._users = {}
-        annotate_messages(self._messages, self._users)
-        annotate_messages(self._threads, self._users)
+        users = {}
+        annotate_messages(self._messages, users)
+        annotate_messages(self._threads, users)
 
         self._write_messages()
         self._write_threads()
@@ -569,6 +569,7 @@ def annotate_messages(messages, users):
     for message in messages:
         message.annotate(users)
 
+
 def get_channels():
     response = slack.api_call("channels.list", exclude_archived=True, exclude_members=True)
     channels = []
@@ -578,6 +579,7 @@ def get_channels():
             channel_id = channel['id']
             channels.append(Channel(channel_id=channel_id, name=name))
     return channels
+
 
 if __name__ == '__main__':
     options = Options()
