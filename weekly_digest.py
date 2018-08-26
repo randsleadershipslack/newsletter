@@ -430,6 +430,8 @@ class Writer:
         self._channel_formatter = ChannelFormatter()
         self._message_formatter = MessageFormatter(self._wrapper)
         self._thread_formatter = ThreadFormatter(self._wrapper)
+        self._channel_report_template = \
+            "\t{name}: {messages} potential messages, {threads} long threads from {total} total messages"
 
     @staticmethod
     def _create_folder():
@@ -456,10 +458,8 @@ class Writer:
 
         annotate_messages(messages, self._users)
         annotate_messages(threads, self._users)
-        print("\t{0}: {1} potential messages, {2} long threads from {3} total messages".format(channel.name,
-                                                                                               len(messages),
-                                                                                               len(threads),
-                                                                                               len(channel.all_messages)))
+        print(self._channel_report_template.format(name=channel.name, messages=len(messages), threads=len(threads),
+                                                   total=len(channel.all_messages)))
         self.filtered_messages += len(messages)
         self.total_threads += len(threads)
         self.total_channels += 1
