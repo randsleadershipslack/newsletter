@@ -364,7 +364,6 @@ class Filter:
         for message in all_messages:
             if message.reaction_count >= self._options.parsed_args.reactions:
                 filtered.append(message)
-        MessageSorter().sort_messages(filtered)
         return filtered
 
     def filter_threads(self, all_messages):
@@ -374,7 +373,6 @@ class Filter:
                 filtered.append(message)
             elif message.threaded_reaction_count >= self._options.thread_reactions:
                 filtered.append(message)
-        MessageSorter().sort_threads(filtered)
         return filtered
 
 
@@ -433,8 +431,9 @@ class Writer:
     Writes the message information to file
     """
 
-    def __init__(self, filter):
+    def __init__(self, filter, sorter):
         self._filter = filter
+        self._sorter = sorter
         self.total_messages = 0
         self.filtered_messages = 0
         self.total_threads = 0
@@ -484,10 +483,13 @@ class Writer:
     def write_channel(self, channel, messages, threads):
         with open(self._filename(channel), 'w') as f:
             f.write(self._channel_formatter.format(channel))
+
+            self._sorter.sort_messages(messages)
             for message in messages:
                 f.write(self._message_formatter.format(message))
                 f.write("\n")
 
+            self._sorter.sort_threads(threads)
             f.write("\n")
             f.write("Threaded messages: {}".format(len(threads)))
             f.write("\n")
@@ -508,7 +510,7 @@ if __name__ == '__main__':
     if not channels:
         sys.exit()
 
-    writer = Writer(filter)
+    writer = Writer(filter, MessageSorter())
     for channel in channels:
         channel.fetch_messages(options.start_timestamp, options.end_timestamp)
         writer.add_channel(channel)
