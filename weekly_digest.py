@@ -326,6 +326,24 @@ def get_channels():
             channels.append(Channel(channel_id=channel_id, name=name))
     return channels
 
+
+class MessageSorter:
+    """
+    A class to sort lists of messages
+    """
+
+    def __init__(self):
+        pass
+
+    def sort_messages(self, messages):
+        messages.sort(key=lambda message : message.reaction_count)
+        messages.reverse()
+
+    def sort_threads(self, messages):
+        messages.sort(key=lambda message : message.threaded_reaction_count)
+        messages.reverse()
+
+
 class Filter:
     """
     A class to manage filtering things out as necessary
@@ -346,18 +364,18 @@ class Filter:
         for message in all_messages:
             if message.reaction_count >= self._options.parsed_args.reactions:
                 filtered.append(message)
-        filtered.sort(key=lambda message : message.reaction_count)
-        return list(reversed(filtered))
+        MessageSorter().sort_messages(filtered)
+        return filtered
 
     def filter_threads(self, all_messages):
-        filtered = {}
+        filtered = []
         for message in all_messages:
             if len(message.replies) >= self._options.parsed_args.reply_threshold:
-                filtered[message.timestamp] = message
+                filtered.append(message)
             elif message.threaded_reaction_count >= self._options.thread_reactions:
-                filtered[message.timestamp] = message
-        threads = sorted(filtered.values(), key=lambda message : message.threaded_reaction_count)
-        return list(reversed(threads))
+                filtered.append(message)
+        MessageSorter().sort_threads(filtered)
+        return filtered
 
 
 class ChannelFormatter:
