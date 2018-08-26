@@ -413,7 +413,7 @@ class ThreadFormatter:
 
 class ChannelWriter:
     """
-    Writes the message information to file
+    Writes the message information to files by channel
     """
 
     def __init__(self, filter, sorter):
