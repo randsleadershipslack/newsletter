@@ -482,6 +482,11 @@ class Writer:
                 f.write(self._thread_formatter.format(message))
                 f.write("\n")
 
+    def finalize(self):
+        if self.total_channels > 1:
+            print("\nFound {0} potential messages and {1} long threads across {2} channels and {3} messages".format(
+                writer.filtered_messages, writer.total_threads, writer.total_channels, writer.total_messages))
+
 
 def annotate_messages(messages, users):
     for message in messages:
@@ -515,6 +520,4 @@ if __name__ == '__main__':
         writer.add_channel(channel)
         channel.reset()
 
-    if len(channels) > 1:
-        print("\nFound {0} potential messages and {1} long threads across {2} channels and {3} messages".format(
-            writer.filtered_messages, writer.total_threads, writer.total_channels, writer.total_messages))
+    writer.finalize()
