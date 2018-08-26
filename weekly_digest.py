@@ -443,6 +443,9 @@ class Writer:
             raise
         return name
 
+    def _filename(self, name):
+        return self.folder_name + "/" + name + ".txt"
+
 
 class ChannelWriter(Writer):
     """
@@ -455,9 +458,6 @@ class ChannelWriter(Writer):
         self.total_threads = 0
         self._users = {}
         self._channel_formatter = ChannelFormatter()
-
-    def _filename(self, channel):
-        return self.folder_name + "/" + channel.name + ".txt"
 
     def add_channel(self, channel):
         all_messages = channel.all_messages.values()
@@ -478,7 +478,7 @@ class ChannelWriter(Writer):
         self._write_channel(channel, messages, threads)
 
     def _write_channel(self, channel, messages, threads):
-        with open(self._filename(channel), 'w') as f:
+        with open(self._filename(channel.name), 'w') as f:
             f.write(self._channel_formatter.format(channel))
 
             self._sorter.sort_messages(messages)
@@ -509,9 +509,6 @@ class ConsolidatedWriter(Writer):
         super().__init__(filter, sorter)
         self._messages = []
         self._threads = []
-
-    def _filename(self, name):
-        return self.folder_name + "/" + name + ".txt"
 
     def add_channel(self, channel):
         all_messages = channel.all_messages.values()
