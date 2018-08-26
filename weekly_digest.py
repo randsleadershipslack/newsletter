@@ -426,7 +426,7 @@ class ChannelWriter:
         self._users = {}
         self.folder_name = ChannelWriter._create_folder()
         self._wrapper = textwrap.TextWrapper(width=80, expand_tabs=False, replace_whitespace=False,
-                                            drop_whitespace=False)
+                                             drop_whitespace=False)
         self._channel_formatter = ChannelFormatter()
         self._message_formatter = MessageFormatter(self._wrapper)
         self._thread_formatter = ThreadFormatter(self._wrapper)
@@ -463,9 +463,9 @@ class ChannelWriter:
         self.filtered_messages += len(messages)
         self.total_threads += len(threads)
         self.total_channels += 1
-        self.write_channel(channel, messages, threads)
+        self._write_channel(channel, messages, threads)
 
-    def write_channel(self, channel, messages, threads):
+    def _write_channel(self, channel, messages, threads):
         with open(self._filename(channel), 'w') as f:
             f.write(self._channel_formatter.format(channel))
 
@@ -485,7 +485,82 @@ class ChannelWriter:
     def finalize(self):
         if self.total_channels > 1:
             print("\nFound {0} potential messages and {1} long threads across {2} channels and {3} messages".format(
-                writer.filtered_messages, writer.total_threads, writer.total_channels, writer.total_messages))
+                self.filtered_messages, self.total_threads, self.total_channels, self.total_messages))
+
+
+class ConsolidatedWriter:
+    """
+    Writes the message information to files by messages and threads
+    """
+
+    def __init__(self, filter, sorter):
+        self._filter = filter
+        self._sorter = sorter
+        self._messages = []
+        self._threads = []
+        self.total_messages = 0
+        self.total_channels = 0
+        self.folder_name = ConsolidatedWriter._create_folder()
+        self._wrapper = textwrap.TextWrapper(width=80, expand_tabs=False, replace_whitespace=False,
+                                            drop_whitespace=False)
+        self._message_formatter = MessageFormatter(self._wrapper)
+        self._thread_formatter = ThreadFormatter(self._wrapper)
+        self._channel_report_template = \
+            "\t{name}: {messages} potential messages, {threads} long threads from {total} total messages"
+
+    @staticmethod
+    def _create_folder():
+        name = datetime.date.today().isoformat()
+        try:
+            if not os.path.exists(name):
+                os.makedirs(name)
+        except OSError:
+            print('Error: Creating name. ' + name)
+            raise
+        return name
+
+    def _filename(self, name):
+        return self.folder_name + "/" + name + ".txt"
+
+    def add_channel(self, channel):
+        all_messages = channel.all_messages.values()
+        self.total_messages += len(all_messages)
+
+        messages = self._filter.filter_messages(all_messages)
+        threads = self._filter.filter_threads(all_messages)
+
+        print(self._channel_report_template.format(name=channel.name, messages=len(messages), threads=len(threads),
+                                                   total=len(channel.all_messages)))
+        self._messages.extend(messages)
+        self._threads.extend(threads)
+        self.total_channels += 1
+        # self.write_channel(channel, messages, threads)
+
+    def _write_messages(self):
+        with open(self._filename("messages"), 'w') as f:
+            self._sorter.sort_messages(self._messages)
+            for message in self._messages:
+                f.write(self._message_formatter.format(message))
+                f.write("\n")
+
+    def _write_threads(self):
+        with open(self._filename("threads"), 'w') as f:
+            self._sorter.sort_threads(self._threads)
+            for message in self._threads:
+                f.write(self._thread_formatter.format(message))
+                f.write("\n")
+
+    def finalize(self):
+        self._users = {}
+        annotate_messages(self._messages, self._users)
+        annotate_messages(self._threads, self._users)
+
+        self._write_messages()
+        self._write_threads()
+
+        if self.total_channels > 1:
+            print("\nFound {0} potential messages and {1} long threads across {2} channels and {3} messages".format(
+                len(self._messages), len(self._threads), writer.total_channels, writer.total_messages))
 
 
 def annotate_messages(messages, users):
@@ -514,7 +589,7 @@ if __name__ == '__main__':
     if not channels:
         sys.exit()
 
-    writer = ChannelWriter(filter, MessageSorter())
+    writer = ConsolidatedWriter(filter, MessageSorter())
     for channel in channels:
         channel.fetch_messages(options.start_timestamp, options.end_timestamp)
         writer.add_channel(channel)
