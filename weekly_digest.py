@@ -488,7 +488,7 @@ def annotate_messages(messages, users):
         message.annotate(users)
 
 def get_channels():
-    response = slack.api_call("channels.list", exclude_archived=1, exclude_members=1)
+    response = slack.api_call("channels.list", exclude_archived=True, exclude_members=True)
     channels = []
     if response["ok"]:
         for channel in response["channels"]:
