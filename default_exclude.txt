@@ -2,6 +2,7 @@
 .*jobs
 .*meta.*
 .*politics
+.*-rss
 amsterdam
 announcements
 ask-rands-anything
