@@ -414,23 +414,19 @@ class ThreadFormatter:
                                       react=message.threaded_reaction_count)
 
 
-class ChannelWriter:
+class Writer:
     """
-    Writes the message information to files by channel
+    A base class for writing
     """
 
     def __init__(self, filter, sorter):
         self._filter = filter
         self._sorter = sorter
         self.total_messages = 0
-        self.filtered_messages = 0
-        self.total_threads = 0
         self.total_channels = 0
-        self._users = {}
-        self.folder_name = ChannelWriter._create_folder()
+        self.folder_name = Writer._create_folder()
         self._wrapper = textwrap.TextWrapper(width=80, expand_tabs=False, replace_whitespace=False,
                                              drop_whitespace=False)
-        self._channel_formatter = ChannelFormatter()
         self._message_formatter = MessageFormatter(self._wrapper)
         self._thread_formatter = ThreadFormatter(self._wrapper)
         self._channel_report_template = \
@@ -446,6 +442,19 @@ class ChannelWriter:
             print('Error: Creating name. ' + name)
             raise
         return name
+
+
+class ChannelWriter(Writer):
+    """
+    Writes the message information to files by channel
+    """
+
+    def __init__(self, filter, sorter):
+        super().__init__(filter, sorter)
+        self.filtered_messages = 0
+        self.total_threads = 0
+        self._users = {}
+        self._channel_formatter = ChannelFormatter()
 
     def _filename(self, channel):
         return self.folder_name + "/" + channel.name + ".txt"
@@ -491,36 +500,15 @@ class ChannelWriter:
                 self.filtered_messages, self.total_threads, self.total_channels, self.total_messages))
 
 
-class ConsolidatedWriter:
+class ConsolidatedWriter(Writer):
     """
     Writes the message information to files by messages and threads
     """
 
     def __init__(self, filter, sorter):
-        self._filter = filter
-        self._sorter = sorter
+        super().__init__(filter, sorter)
         self._messages = []
         self._threads = []
-        self.total_messages = 0
-        self.total_channels = 0
-        self.folder_name = ConsolidatedWriter._create_folder()
-        self._wrapper = textwrap.TextWrapper(width=80, expand_tabs=False, replace_whitespace=False,
-                                            drop_whitespace=False)
-        self._message_formatter = MessageFormatter(self._wrapper)
-        self._thread_formatter = ThreadFormatter(self._wrapper)
-        self._channel_report_template = \
-            "\t{name}: {messages} potential messages, {threads} long threads from {total} total messages"
-
-    @staticmethod
-    def _create_folder():
-        name = datetime.date.today().isoformat()
-        try:
-            if not os.path.exists(name):
-                os.makedirs(name)
-        except OSError:
-            print('Error: Creating name. ' + name)
-            raise
-        return name
 
     def _filename(self, name):
         return self.folder_name + "/" + name + ".txt"
@@ -537,7 +525,6 @@ class ConsolidatedWriter:
         self._messages.extend(messages)
         self._threads.extend(threads)
         self.total_channels += 1
-        # self.write_channel(channel, messages, threads)
 
     def _write_messages(self):
         with open(self._filename("messages"), 'w') as f:
