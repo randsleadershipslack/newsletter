@@ -168,11 +168,11 @@ class Message:
 
     @property
     def user_id(self):
-        return self._json['user']
+        return self._json.get('user')
 
     @property
     def text(self):
-        return self._json['text']
+        return self._json.get('text')
 
     @property
     def is_thread(self):
