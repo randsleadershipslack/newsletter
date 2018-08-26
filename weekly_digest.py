@@ -312,21 +312,6 @@ class Channel:
         raise RuntimeError
 
 
-def annotate_messages(messages, users):
-    for message in messages:
-        message.annotate(users)
-
-def get_channels():
-    response = slack.api_call("channels.list", exclude_archived=1, exclude_members=1)
-    channels = []
-    if response["ok"]:
-        for channel in response["channels"]:
-            name = channel['name']
-            channel_id = channel['id']
-            channels.append(Channel(channel_id=channel_id, name=name))
-    return channels
-
-
 class MessageSorter:
     """
     A class to sort lists of messages
@@ -497,6 +482,20 @@ class Writer:
                 f.write(self._thread_formatter.format(message))
                 f.write("\n")
 
+
+def annotate_messages(messages, users):
+    for message in messages:
+        message.annotate(users)
+
+def get_channels():
+    response = slack.api_call("channels.list", exclude_archived=1, exclude_members=1)
+    channels = []
+    if response["ok"]:
+        for channel in response["channels"]:
+            name = channel['name']
+            channel_id = channel['id']
+            channels.append(Channel(channel_id=channel_id, name=name))
+    return channels
 
 if __name__ == '__main__':
     options = Options()
