@@ -1,5 +1,7 @@
 @aldenpeterson
 @alowishus
+@bcarter
+@Benjamin Gramlich
 @chuqui
 @daveoflynn
 @David Morgantini
@@ -17,6 +19,7 @@
 @kevin.newman
 @kiger
 @louis
+@Marcello Testi
 @masonoise
 @mathiasfoster
 @matt.schellhas
@@ -24,10 +27,12 @@
 @mmozuras
 @mngwinn
 @paul.wright
+@pietesartain
 @pixeldiva
 @ranjani
 @rhichi
 @royrapoport
+@sandrews
 @Shubhanshu Nagar
 @stevetauber
 @tottinge
