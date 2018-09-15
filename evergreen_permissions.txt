@@ -1,7 +1,10 @@
 @aldenpeterson
 @alowishus
+@aphill70
+@Arvind Pemmaraju
 @bcarter
 @Benjamin Gramlich
+@chelseatroy
 @chuqui
 @daveoflynn
 @David Morgantini
@@ -9,6 +12,7 @@
 @derricks
 @edgriebel
 @Elliott Carlson
+@elidaniel
 @Eric Moore
 @eugk
 @gga
@@ -18,21 +22,29 @@
 @Kevin Goldsmith
 @kevin.newman
 @kiger
+@kyle
+@kylecoberly
 @louis
 @Marcello Testi
 @masonoise
 @mathiasfoster
 @matt.schellhas
+@Mike Sullivan
 @miked
 @mmozuras
 @mngwinn
+@nellshamrell
 @paul.wright
 @pietesartain
 @pixeldiva
 @ranjani
 @rhichi
+@rickylam
 @royrapoport
 @sandrews
 @Shubhanshu Nagar
 @stevetauber
 @tottinge
+@Will Newton
+
+@slackbot
