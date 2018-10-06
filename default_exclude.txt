@@ -20,6 +20,7 @@ daily-ftw
 daily-wtf
 devnull
 downunder
+emergency-cute
 fite-me
 five-me
 goodmorning
@@ -32,6 +33,7 @@ nebraska
 new-channels
 new-york-city
 pdx
+pets
 rands-custodians
 rands-slack-rules
 rtp_nc
@@ -42,3 +44,5 @@ slack-support
 toronto
 uk
 vancouver
+vet-my-jobdesc
+vet-my-resume
