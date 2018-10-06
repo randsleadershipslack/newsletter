@@ -32,7 +32,9 @@ as well.
 
 {0} will see your response to this message, which can be as
 short as “Ok” (just this newsletter), “Ok - always”, “No”, and
-“No - always” (or :thumbsup:/:thumbsdown:).
+“No - always” (or :thumbsup:/:thumbsdown:).  (They are also available
+to reword how your contribution was presented if you feel it doesn't match
+your intended message.)
 
 If you have questions, please either reply here, or in #rands-newsletter if
 they’re more general.
