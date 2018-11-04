@@ -1,3 +1,4 @@
+@Aaron Blohowiak
 @aldenpeterson
 @alowishus
 @aphill70
@@ -7,6 +8,7 @@
 @chelseatroy
 @chuqui
 @daveoflynn
+@David Lynch
 @David Morgantini
 @David Van Duzer
 @derricks
@@ -17,32 +19,47 @@
 @eugk
 @gga
 @Ian Struckhoff
+@Jamie M
 @jimgrey
+@joed
+@Joel Courtney
+@Josh Carroll
+@Jude Burger
 @kathkeating
 @Kevin Goldsmith
 @kevin.newman
 @kiger
+@kspaans
 @kyle
 @kylecoberly
 @louis
 @Marcello Testi
 @masonoise
 @mathiasfoster
+@matt.b
 @matt.schellhas
+@micahtan
 @Mike Sullivan
 @miked
 @mmozuras
 @mngwinn
 @nellshamrell
+@nolongermyself
+@ntalbott
 @paul.wright
 @pietesartain
 @pixeldiva
 @ranjani
+@reid.simmons
 @rhichi
 @rickylam
+@rlpowell
+@roballen
 @royrapoport
+@Rudy Rigot
 @sandrews
 @Shubhanshu Nagar
+@steveo
 @stevetauber
 @tottinge
 @Will Newton
