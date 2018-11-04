@@ -1,8 +1,8 @@
+.*-rss
 .*-spoilers
 .*jobs
 .*meta.*
 .*politics
-.*-rss
 amsterdam
 announcements
 ask-rands-anything
@@ -20,7 +20,7 @@ daily-ftw
 daily-wtf
 devnull
 downunder
-emergency-cute
+emergencycute
 fite-me
 five-me
 goodmorning
@@ -34,10 +34,13 @@ new-channels
 new-york-city
 pdx
 pets
+poland
+random
 rands-custodians
 rands-slack-rules
 rtp_nc
 ruby
+san-francisco
 seattle
 sf-.*-meetup
 slack-support
@@ -46,3 +49,13 @@ uk
 vancouver
 vet-my-jobdesc
 vet-my-resume
+san-francisco
+cooking
+coffee
+royquotes
+mental-health
+hockey
+goodwords
+gaming
+currently-eating
+cars
