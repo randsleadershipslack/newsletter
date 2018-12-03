@@ -1,16 +1,20 @@
 @Aaron Blohowiak
+@Aaron Senneff
 @aldenpeterson
 @alowishus
 @aphill70
 @Arvind Pemmaraju
 @bcarter
 @Benjamin Gramlich
+@cesarnobre
 @chelseatroy
 @chuqui
 @daveoflynn
 @David Lynch
 @David Morgantini
 @David Van Duzer
+@davidpitkin
+@Dee Marai
 @derricks
 @edgriebel
 @Elliott Carlson
@@ -21,6 +25,7 @@
 @Ian Struckhoff
 @Jamie M
 @jimgrey
+@Joe McGrath
 @joed
 @Joel Courtney
 @Josh Carroll
@@ -34,10 +39,12 @@
 @kylecoberly
 @louis
 @Marcello Testi
+@marwoodchap
 @masonoise
 @mathiasfoster
 @matt.b
 @matt.schellhas
+@mattrogish
 @micahtan
 @Mike Sullivan
 @miked
@@ -63,5 +70,6 @@
 @stevetauber
 @tottinge
 @Will Newton
+@Xianhang Zhang
 
 @slackbot
