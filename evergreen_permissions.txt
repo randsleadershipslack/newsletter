@@ -4,6 +4,7 @@
 @alowishus
 @aphill70
 @Arvind Pemmaraju
+@base10
 @bcarter
 @Benjamin Gramlich
 @cesarnobre
@@ -16,14 +17,17 @@
 @davidpitkin
 @Dee Marai
 @derricks
+@dmag
 @edgriebel
 @Elliott Carlson
 @elidaniel
 @Eric Moore
 @eugk
 @gga
+@glenn.proctor
 @Ian Struckhoff
 @Jamie M
+@janegarza
 @jimgrey
 @Joe McGrath
 @joed
@@ -47,9 +51,11 @@
 @mattrogish
 @micahtan
 @Mike Sullivan
+@Mike Wales
 @miked
 @mmozuras
 @mngwinn
+@moj_hoss
 @nellshamrell
 @nolongermyself
 @ntalbott
@@ -68,6 +74,7 @@
 @Shubhanshu Nagar
 @steveo
 @stevetauber
+@Ted T.
 @tottinge
 @Will Newton
 @Xianhang Zhang
