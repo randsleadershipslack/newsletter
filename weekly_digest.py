@@ -26,9 +26,12 @@ class ApiWrapper:
             if response['ok']:
                 return response
             if 'error' not in response or 'ratelimited' not in response['error']:
-                print(response)
+                if options.debug:
+                    print(response)
                 raise RuntimeError
             else:
+                if options.debug:
+                    print("Rate limited; sleeping for {}".format(tries))
                 tries += 1
                 time.sleep(tries)
         raise RuntimeError("Rate limited three times in a row")
