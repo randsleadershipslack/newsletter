@@ -38,6 +38,15 @@ class ApiWrapper:
     def call(*args, **kwargs):
         return call(*args, **kwargs)
 
+    def get_channels():
+        response = call("channels.list", exclude_archived=True, exclude_members=True)
+        channels = []
+        for channel in response["channels"]:
+            name = channel['name']
+            channel_id = channel['id']
+            channels.append(Channel(channel_id=channel_id, name=name))
+        return channels
+
 
 def valid_date(s):
     try:
@@ -593,16 +602,6 @@ def annotate_messages(messages, users):
         message.annotate(users)
 
 
-def get_channels():
-    response = call("channels.list", exclude_archived=True, exclude_members=True)
-    channels = []
-    for channel in response["channels"]:
-        name = channel['name']
-        channel_id = channel['id']
-        channels.append(Channel(channel_id=channel_id, name=name))
-    return channels
-
-
 if __name__ == '__main__':
     options = Options()
     options.store_args()
@@ -612,7 +611,7 @@ if __name__ == '__main__':
     api = ApiWrapper(options)
 
     filter = Filter(options)
-    channels = filter.filter_channels(get_channels())
+    channels = filter.filter_channels(api.get_channels(api))
     print("Found {0} channels".format(len(channels)))
     if not channels:
         sys.exit()
