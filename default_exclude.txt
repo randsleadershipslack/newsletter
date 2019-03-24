@@ -35,6 +35,7 @@ goodwords
 hockey
 intros
 lego
+lifting
 losangeles
 mental-health
 midwest-usa
