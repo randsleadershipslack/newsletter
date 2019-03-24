@@ -45,6 +45,18 @@ class ApiWrapper:
             channels.append(Channel(api=self, channel_id=channel_id, name=name))
         return channels
 
+    def getPermalink(self, channel, message_ts):
+        response = self.call("chat.getPermalink", channel=channel, message_ts=message_ts)
+        return response['permalink']
+
+    def userProfile(self, user):
+        response = self.call("users.info", user=user)
+        return response['user']['profile']
+
+    def channelHistory(self, channel, oldest=None, latest=None, inclusive=False, count=500):
+        return self.call("channels.history", channel=channel, inclusive=inclusive, oldest=oldest,
+                         latest=latest, count=count)
+
 
 def valid_date(s):
     try:
@@ -266,8 +278,7 @@ class Message:
             self.username = user.name
 
     def _annotate_link(self):
-        response = self.api.call("chat.getPermalink", channel=self.channel_id, message_ts=self.timestamp)
-        self.url = response['permalink']
+        self.url = self.api.getPermalink(channel=self.channel_id, message_ts=self.timestamp)
 
 
 class User:
@@ -283,9 +294,9 @@ class User:
 
     def fetch_name(self):
         if not self._real_name and not self._display_name:
-            response = self.api.call("users.info", user=self.id)
-            self._real_name = response['user']['profile']['real_name']
-            self._display_name = response['user']['profile']['display_name']
+            profile = self.api.userProfile(user=self.id)
+            self._real_name = profile['real_name']
+            self._display_name = profile['display_name']
 
     @property
     def name(self):
@@ -316,8 +327,7 @@ class Channel:
         end_at = end.timestamp()
         replies = []
         while more:
-            response = self.api.call("channels.history", channel=self.id, inclusive=False, oldest=start_from,
-                                latest=end_at, count=500)
+            response = self.api.channelHistory(channel=self.id, oldest=start_from, latest=end_at)
             more = response['has_more']
             for message in self._extract_messages(response):
                 self.all_messages[message.timestamp] = message
@@ -345,7 +355,7 @@ class Channel:
     def fetch_message(self, timestamp):
         if timestamp in self.all_messages:
             return self.all_messages[timestamp]
-        response = self.api.call("channels.history", channel=self.id, inclusive=True, latest=timestamp, count=1)
+        response = self.api.channelHistory(channel=self.id, inclusive=True, latest=timestamp, count=1)
         return self._extract_messages(response)[0]
 
 
