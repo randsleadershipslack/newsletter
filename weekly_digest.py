@@ -469,9 +469,10 @@ class Writer:
     A base class for writing
     """
 
-    def __init__(self, message_filter, sorter):
+    def __init__(self, message_filter, sorter, options):
         self._filter = message_filter
         self._sorter = sorter
+        self.options = options
         self.total_messages = 0
         self.total_channels = 0
         self.folder_name = Writer._create_folder()
@@ -500,8 +501,8 @@ class ChannelWriter(Writer):
     Writes the message information to files by channel
     """
 
-    def __init__(self, message_filter, sorter):
-        super().__init__(message_filter, sorter)
+    def __init__(self, message_filter, sorter, options):
+        super().__init__(message_filter, sorter, options)
         self.filtered_messages = 0
         self.total_threads = 0
         self._users = {}
@@ -558,8 +559,8 @@ class ConsolidatedWriter(Writer):
     Writes the message information to files by messages and threads
     """
 
-    def __init__(self, message_filter, sorter):
-        super().__init__(message_filter, sorter)
+    def __init__(self, message_filter, sorter, options):
+        super().__init__(message_filter, sorter, options)
         self._messages = []
         self._threads = []
         self._message_formatter = MessageFormatter(self._wrapper, add_channel_name=True)
@@ -627,9 +628,9 @@ if __name__ == '__main__':
     if not channels:
         sys.exit()
 
-    writer = ConsolidatedWriter(filter, MessageSorter())
+    writer = ConsolidatedWriter(message_filter=filter, sorter=MessageSorter(), options=options)
     if options.parsed_args.split_by_channels:
-        writer = ChannelWriter(filter, MessageSorter())
+        writer = ChannelWriter(message_filter=filter, sorter=MessageSorter(), options=options)
     for channel in channels:
         channel.fetch_messages(options.start_timestamp, options.end_timestamp)
         writer.add_channel(channel)
