@@ -7,8 +7,25 @@ import os
 import re
 import sys
 import textwrap
+import time
 
 slack = SlackClient(os.environ.get('API_TOKEN', "garbage"))
+
+
+def call(*args, **kwargs):
+    tries = 0;
+    while tries < 3:
+        response = slack.api_call(*args, **kwargs)
+        if response['ok']:
+            return response
+        if 'error' not in response or 'ratelimited' not in response['error']:
+            print(response)
+            raise RuntimeError
+        else:
+            tries += 1
+            time.sleep(tries)
+    raise RuntimeError("Rate limited three times in a row")
+
 
 
 def valid_date(s):
@@ -226,9 +243,8 @@ class Message:
             self.username = user.name
 
     def _annotate_link(self):
-        response = slack.api_call("chat.getPermalink", channel=self.channel_id, message_ts=self.timestamp)
-        if response['ok']:
-            self.url = response['permalink']
+        response = call("chat.getPermalink", channel=self.channel_id, message_ts=self.timestamp)
+        self.url = response['permalink']
 
 
 class User:
@@ -243,10 +259,9 @@ class User:
 
     def fetch_name(self):
         if not self._real_name and not self._display_name:
-            response = slack.api_call("users.info", user=self.id)
-            if response['ok']:
-                self._real_name = response['user']['profile']['real_name']
-                self._display_name = response['user']['profile']['display_name']
+            response = call("users.info", user=self.id)
+            self._real_name = response['user']['profile']['real_name']
+            self._display_name = response['user']['profile']['display_name']
 
     @property
     def name(self):
@@ -276,20 +291,16 @@ class Channel:
         end_at = end.timestamp()
         replies = []
         while more:
-            response = slack.api_call("channels.history", channel=self.id, inclusive=False, oldest=start_from,
-                                      latest=end_at, count=500)
-            if response['ok']:
-                more = response['has_more']
-                for message in self._extract_messages(response):
-                    self.all_messages[message.timestamp] = message
-                    if message.from_bot:
-                        continue
-                    if message.thread_root:
-                        replies.append(message)
-                    end_at = message.timestamp
-            else:
-                print(response['headers'])
-                raise RuntimeError
+            response = call("channels.history", channel=self.id, inclusive=False, oldest=start_from,
+                            latest=end_at, count=500)
+            more = response['has_more']
+            for message in self._extract_messages(response):
+                self.all_messages[message.timestamp] = message
+                if message.from_bot:
+                    continue
+                if message.thread_root:
+                    replies.append(message)
+                end_at = message.timestamp
         for message in replies:
             self._accumulate_thread(message)
 
@@ -309,11 +320,8 @@ class Channel:
     def fetch_message(self, timestamp):
         if timestamp in self.all_messages:
             return self.all_messages[timestamp]
-        response = slack.api_call("channels.history", channel=self.id, inclusive=True, latest=timestamp, count=1)
-        if response['ok']:
-            return self._extract_messages(response)[0]
-        print(response['headers'])
-        raise RuntimeError
+        response = call("channels.history", channel=self.id, inclusive=True, latest=timestamp, count=1)
+        return self._extract_messages(response)[0]
 
 
 class MessageSorter:
@@ -571,13 +579,12 @@ def annotate_messages(messages, users):
 
 
 def get_channels():
-    response = slack.api_call("channels.list", exclude_archived=True, exclude_members=True)
+    response = call("channels.list", exclude_archived=True, exclude_members=True)
     channels = []
-    if response["ok"]:
-        for channel in response["channels"]:
-            name = channel['name']
-            channel_id = channel['id']
-            channels.append(Channel(channel_id=channel_id, name=name))
+    for channel in response["channels"]:
+        name = channel['name']
+        channel_id = channel['id']
+        channels.append(Channel(channel_id=channel_id, name=name))
     return channels
 
 
