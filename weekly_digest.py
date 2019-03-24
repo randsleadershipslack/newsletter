@@ -27,6 +27,17 @@ def call(*args, **kwargs):
     raise RuntimeError("Rate limited three times in a row")
 
 
+class ApiWrapper:
+    """
+    Consolidates API calls, error handling
+    """
+
+    def __init__(self, options):
+        self.options = options
+
+    def call(*args, **kwargs):
+        return call(*args, **kwargs)
+
 
 def valid_date(s):
     try:
@@ -597,6 +608,8 @@ if __name__ == '__main__':
     options.store_args()
 
     print("Looking for messages from {0} to {1}".format(options.start_date.isoformat(), options.end_date.isoformat()))
+
+    api = ApiWrapper(options)
 
     filter = Filter(options)
     channels = filter.filter_channels(get_channels())
