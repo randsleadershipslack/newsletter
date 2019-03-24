@@ -263,7 +263,7 @@ class Message:
         self._annotate_link()
 
     def _annotate_user(self, users):
-        user = users.get(self.user_id, User(self.user_id))
+        user = users.get(self.user_id, User(api=self.api, user_id=self.user_id))
         if user:
             self.username = user.name
 
@@ -277,7 +277,8 @@ class User:
     Tracks and aggregates information specific to a user.
     """
 
-    def __init__(self, user_id):
+    def __init__(self, api, user_id):
+        self.api = api
         self.id = user_id
         self._real_name = ""
         self._display_name = ""
