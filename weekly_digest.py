@@ -9,8 +9,6 @@ import sys
 import textwrap
 import time
 
-slack = SlackClient(os.environ.get('API_TOKEN', "garbage"))
-
 
 class ApiWrapper:
     """
@@ -19,11 +17,12 @@ class ApiWrapper:
 
     def __init__(self, options):
         self.options = options
+        self.slack = SlackClient(os.environ.get('API_TOKEN', "garbage"))
 
     def call(self, *args, **kwargs):
         tries = 0;
         while tries < 3:
-            response = slack.api_call(*args, **kwargs)
+            response = self.slack.api_call(*args, **kwargs)
             if response['ok']:
                 return response
             if 'error' not in response or 'ratelimited' not in response['error']:
