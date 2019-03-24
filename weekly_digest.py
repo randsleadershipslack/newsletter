@@ -524,8 +524,9 @@ class ChannelWriter(Writer):
 
         annotate_messages(messages, self._users)
         annotate_messages(threads, self._users)
-        print(self._channel_report_template.format(name=channel.name, messages=len(messages), threads=len(threads),
-                                                   total=len(channel.all_messages)))
+        if len(messages) or len(threads) or self.options.debug:
+            print(self._channel_report_template.format(name=channel.name, messages=len(messages), threads=len(threads),
+                                                       total=len(channel.all_messages)))
         self.filtered_messages += len(messages)
         self.total_threads += len(threads)
         self.total_channels += 1
@@ -576,8 +577,9 @@ class ConsolidatedWriter(Writer):
         messages = self._filter.filter_messages(all_messages)
         threads = self._filter.filter_threads(all_messages)
 
-        print(self._channel_report_template.format(name=channel.name, messages=len(messages), threads=len(threads),
-                                                   total=len(channel.all_messages)))
+        if len(messages) or len(threads) or self.options.debug:
+            print(self._channel_report_template.format(name=channel.name, messages=len(messages), threads=len(threads),
+                                                       total=len(channel.all_messages)))
         self._messages.extend(messages)
         self._threads.extend(threads)
         self.total_channels += 1
