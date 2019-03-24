@@ -35,11 +35,11 @@ class ApiWrapper:
     def __init__(self, options):
         self.options = options
 
-    def call(*args, **kwargs):
+    def call(self, *args, **kwargs):
         return call(*args, **kwargs)
 
-    def get_channels():
-        response = call("channels.list", exclude_archived=True, exclude_members=True)
+    def get_channels(self):
+        response = self.call("channels.list", exclude_archived=True, exclude_members=True)
         channels = []
         for channel in response["channels"]:
             name = channel['name']
@@ -611,7 +611,7 @@ if __name__ == '__main__':
     api = ApiWrapper(options)
 
     filter = Filter(options)
-    channels = filter.filter_channels(api.get_channels(api))
+    channels = filter.filter_channels(api.get_channels())
     print("Found {0} channels".format(len(channels)))
     if not channels:
         sys.exit()
