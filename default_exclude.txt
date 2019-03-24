@@ -5,6 +5,7 @@
 .*politics
 amsterdam
 announcements
+apple
 ask-rands-anything
 austin
 aws
@@ -17,6 +18,7 @@ brazil
 brexit
 canada
 cars
+chicago
 coffee
 colorado-connections
 cooking
@@ -28,6 +30,7 @@ devnull
 downunder
 emergencycute
 fite-me
+fitness
 five-me
 gaming
 goodmorning
@@ -45,6 +48,7 @@ music
 nebraska
 new-channels
 new-york-city
+parenting
 pdx
 pets
 poland
@@ -57,6 +61,7 @@ ruby
 running
 san-francisco
 san-francisco
+sanfrancisco
 seattle
 sf-.*-meetup
 slack-support
@@ -65,4 +70,5 @@ uk
 vancouver
 vet-my-jobdesc
 vet-my-resume
+whiskey
 woodworking
