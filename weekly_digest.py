@@ -12,21 +12,6 @@ import time
 slack = SlackClient(os.environ.get('API_TOKEN', "garbage"))
 
 
-def call(*args, **kwargs):
-    tries = 0;
-    while tries < 3:
-        response = slack.api_call(*args, **kwargs)
-        if response['ok']:
-            return response
-        if 'error' not in response or 'ratelimited' not in response['error']:
-            print(response)
-            raise RuntimeError
-        else:
-            tries += 1
-            time.sleep(tries)
-    raise RuntimeError("Rate limited three times in a row")
-
-
 class ApiWrapper:
     """
     Consolidates API calls, error handling
@@ -36,7 +21,18 @@ class ApiWrapper:
         self.options = options
 
     def call(self, *args, **kwargs):
-        return call(*args, **kwargs)
+        tries = 0;
+        while tries < 3:
+            response = slack.api_call(*args, **kwargs)
+            if response['ok']:
+                return response
+            if 'error' not in response or 'ratelimited' not in response['error']:
+                print(response)
+                raise RuntimeError
+            else:
+                tries += 1
+                time.sleep(tries)
+        raise RuntimeError("Rate limited three times in a row")
 
     def get_channels(self):
         response = self.call("channels.list", exclude_archived=True, exclude_members=True)
