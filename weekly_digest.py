@@ -50,6 +50,7 @@ class Options(argparse.ArgumentParser):
         self.end_timestamp = datetime.datetime.now()
         self._whitelist = []
         self._blacklist = []
+        self.debug = False
 
         self.add_argument("--week", type=int, default=1, metavar="N",
                           help="Fetch messages from N weeks ago (default: %(default)s)")
@@ -76,11 +77,14 @@ class Options(argparse.ArgumentParser):
         self.add_argument("--split-by-channels", action='store_true', dest='split_by_channels',
                           help="Split the results by channel rather than consolidating messages and threads.  " +
                                "Default false.")
+        self.add_argument("-d", "--debug", action='store_true', dest='debug',
+                          help="Enable more thorough debugging messages.")
 
     def store_args(self):
         self.parsed_args = self.parse_args()
         self._extract_dates()
         self._compile_lists()
+        self.debug = self.parsed_args.debug
 
     @property
     def thread_reactions(self):
