@@ -44,7 +44,7 @@ class ApiWrapper:
         for channel in response["channels"]:
             name = channel['name']
             channel_id = channel['id']
-            channels.append(Channel(channel_id=channel_id, name=name))
+            channels.append(Channel(api=self, channel_id=channel_id, name=name))
         return channels
 
 
@@ -301,7 +301,8 @@ class Channel:
     Tracks and aggregates information specific to a channel.
     """
 
-    def __init__(self, channel_id, name):
+    def __init__(self, api, channel_id, name):
+        self.api = api
         self.id = channel_id
         self.name = name
         self.all_messages = {}
@@ -315,8 +316,8 @@ class Channel:
         end_at = end.timestamp()
         replies = []
         while more:
-            response = call("channels.history", channel=self.id, inclusive=False, oldest=start_from,
-                            latest=end_at, count=500)
+            response = api.call("channels.history", channel=self.id, inclusive=False, oldest=start_from,
+                                latest=end_at, count=500)
             more = response['has_more']
             for message in self._extract_messages(response):
                 self.all_messages[message.timestamp] = message
@@ -344,7 +345,7 @@ class Channel:
     def fetch_message(self, timestamp):
         if timestamp in self.all_messages:
             return self.all_messages[timestamp]
-        response = call("channels.history", channel=self.id, inclusive=True, latest=timestamp, count=1)
+        response = api.call("channels.history", channel=self.id, inclusive=True, latest=timestamp, count=1)
         return self._extract_messages(response)[0]
 
 
