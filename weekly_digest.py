@@ -187,7 +187,8 @@ class Message:
     Deals with interpreting message information
     """
 
-    def __init__(self, channel, json):
+    def __init__(self, api, channel, json):
+        self.api = api
         self.channel_id = channel.id
         self.channel_name = channel.name
         self._json = json
@@ -267,7 +268,7 @@ class Message:
             self.username = user.name
 
     def _annotate_link(self):
-        response = call("chat.getPermalink", channel=self.channel_id, message_ts=self.timestamp)
+        response = self.api.call("chat.getPermalink", channel=self.channel_id, message_ts=self.timestamp)
         self.url = response['permalink']
 
 
@@ -333,7 +334,7 @@ class Channel:
         messages = []
         message_list = response['messages']
         for json_msg in message_list:
-            messages.append(Message(channel=self, json=json_msg))
+            messages.append(Message(api = self.api, channel=self, json=json_msg))
         return messages
 
     def _accumulate_thread(self, message):
