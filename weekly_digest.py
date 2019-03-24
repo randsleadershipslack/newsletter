@@ -285,7 +285,7 @@ class User:
 
     def fetch_name(self):
         if not self._real_name and not self._display_name:
-            response = call("users.info", user=self.id)
+            response = self.api.call("users.info", user=self.id)
             self._real_name = response['user']['profile']['real_name']
             self._display_name = response['user']['profile']['display_name']
 
@@ -318,7 +318,7 @@ class Channel:
         end_at = end.timestamp()
         replies = []
         while more:
-            response = api.call("channels.history", channel=self.id, inclusive=False, oldest=start_from,
+            response = self.api.call("channels.history", channel=self.id, inclusive=False, oldest=start_from,
                                 latest=end_at, count=500)
             more = response['has_more']
             for message in self._extract_messages(response):
@@ -347,7 +347,7 @@ class Channel:
     def fetch_message(self, timestamp):
         if timestamp in self.all_messages:
             return self.all_messages[timestamp]
-        response = api.call("channels.history", channel=self.id, inclusive=True, latest=timestamp, count=1)
+        response = self.api.call("channels.history", channel=self.id, inclusive=True, latest=timestamp, count=1)
         return self._extract_messages(response)[0]
 
 
